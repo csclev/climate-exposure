@@ -2,6 +2,7 @@ import pytest
 import pandas as pd
 from src.geocoder import Geocoder
 from pandas.testing import assert_frame_equal
+from unittest.mock import MagicMock
 
 def test_load_cache(tmp_path):
     cache_path = tmp_path/'cache.csv'
@@ -20,3 +21,19 @@ def test_load_cache(tmp_path):
     print((new_coder.geo_cache.iloc[[0]]))
     print(query_result)
     assert_frame_equal(new_coder.geo_cache.loc[[0],['query','latitude', 'longitude']], query_result)
+
+
+def test_get_location_data(tmp_path):
+    cache_path = tmp_path/'cache.csv'
+    query = "Chicago, IL"
+    cached_row = {
+        "query": query
+    }
+    pd.DataFrame([cached_row]).to_csv(cache_path, index=False)
+
+    geocoder = Geocoder(cache_path)
+    geocoder.geocode = MagicMock()
+
+    result = geocoder.get_location_data(query)
+    assert result.loc[0, 'query'] == query
+
