@@ -19,7 +19,6 @@ class Geocoder():
         mask = self.geo_cache['query'] == query
         if mask.any():
             return self.geo_cache.loc[mask].iloc[0].to_dict()
-        # TODO complete the function for calling the geocode API
         location = self.geocode_service(query)
         if location:
             address_dict = location.address
