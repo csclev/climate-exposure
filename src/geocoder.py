@@ -10,17 +10,17 @@ class Geocoder():
     def __init__(self, cache_file, project=API_PROJECT_NAME):
         self.cache_path = Path(cache_file)
         self.geo_cache = self.load_cache()
-        self.geocode_service = Nominatim(user_agent=project)
-        self.geocode = RateLimiter(self.geocode_service.geocode, min_delay_seconds=1, max_retries=2)
+        self.geocode_agent = Nominatim(user_agent=project)
+        self.geocode_service = RateLimiter(self.geocode_agent.geocode, min_delay_seconds=1, max_retries=2)
     
-    def get_location_data(self, query: str) -> dict:
+    def geocode(self, query: str) -> dict:
         """Returns a dict of location data for any query string"""
         query = query.strip()
         mask = self.geo_cache['query'] == query
         if mask.any():
             return self.geo_cache.loc[mask].iloc[0].to_dict()
         # TODO complete the function for calling the geocode API
-        location = self.geocode(query)
+        location = self.geocode_service(query)
         if location:
             address_dict = location.address
             new_row = {
@@ -36,10 +36,14 @@ class Geocoder():
         return new_row
     
     def load_cache(self):
-        if self.cache_path.exists():
+        if self.cache_path.exists() and self.cache_path.stat().st_size > 0:
             return pd.read_csv(self.cache_path).filter(regex="^(?!Unnamed)")
-        return pd.DataFrame(columns=['query', 'address', 'latitude', 'longitude', "city", "state", "postcode", "country" ])
-            
+        return pd.DataFrame({
+        'query': pd.Series(dtype='str'),
+        'address': pd.Series(dtype='str'),
+        'latitude': pd.Series(dtype='float64'),
+        'longitude': pd.Series(dtype='float64')
+    })            
     def save_cache(self):
         self.geo_cache.to_csv(self.cache_path)
 
