@@ -48,27 +48,25 @@ def test_get_location_data_api_response_location(geo):
     mock_location = MagicMock()
     mock_location.latitude = 1
     mock_location.longitude = 2
-    mock_location.address = {
-        "city": "Chicago",
-        "state": "Illinois",
-        "postcode": "60606",
-        "country": "USA"
-    }
+    mock_location.address = "Chicago, Cook County, Illinois, United States"
+    # mock_location.address = {
+    #     "city": "Chicago",
+    #     "state": "Illinois",
+    #     "postcode": "60606",
+    #     "country": "USA"
+    # }
     geo.geocode = MagicMock(return_value=mock_location)
     result = geo.get_location_data(query)
     
-    assert result['city'] == "Chicago"
-    assert result['state'] == "Illinois"
     assert result["query"] == query
+    assert result['address'] == "Chicago, Cook County, Illinois, United States"
     assert result['latitude'] == 1
     assert result['longitude'] == 2
-    assert result['postcode'] == "60606"
-    assert result['country'] == "USA"
 
     """it saves the data"""
     saved_df = pd.read_csv(geo.cache_path)
     assert len(saved_df) == 1
-    assert saved_df.iloc[0]['city'] == "Chicago"
+    assert saved_df.iloc[0]['address'] == "Chicago, Cook County, Illinois, United States"
 
 def test_get_location_data_not_found(geo):
     

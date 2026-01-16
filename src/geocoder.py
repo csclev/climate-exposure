@@ -27,11 +27,7 @@ class Geocoder():
                 "query": query,
                 "latitude": location.latitude,
                 "longitude": location.longitude,
-                "address": address_dict, 
-                "city": address_dict.get('city') or address_dict.get('town') or address_dict.get('village'),
-                "state": address_dict.get('state'),
-                "postcode": address_dict.get('postcode'),
-                "country": location.address.get('country')
+                "address": address_dict
             }
         else:
             new_row = {col: (query if col == 'query' else None) for col in self.geo_cache.columns}
