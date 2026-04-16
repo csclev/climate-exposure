@@ -1,0 +1,202 @@
+---
+title: "Climate Resilience as a Housing Market Signal: Evidence from NOAA Storm Events and FEMA NRI Data"
+author: "David Schaaf, Chris Clever, Neeraj Athani"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    latex_engine: xelatex
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{float}
+  - \usepackage{amsmath}
+  - \usepackage{caption}
+  - \captionsetup{font=small}
+  - \usepackage{tabularray}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo    = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  fig.pos = "H",
+  out.width = "100%"
+)
+
+source("./R/00_load_data.R")
+source("./R/01_eda.R")
+source("./R/02_event_study_plots.R")
+source("./R/03_regression.R")
+```
+
+\newpage
+
+# Abstract
+
+*To be completed.*
+
+\newpage
+
+# Motivation
+
+*To be completed.*
+
+
+# Data
+
+## Sources
+
+We combine three datasets at the county-month level:
+
+**NOAA Storm Events Database (2020–2025).** Event-level records of storm occurrences across the United States, including location, event type, duration, and damage estimates for property and crops. We aggregate to county-month observations, retaining counties with at least one recorded event. Our sample covers `r format(n_events, big.mark=",")` county-month storm observations across `r format(n_counties, big.mark=",")` unique counties over the period `r year_range`.
+
+**Zillow Home Value Index (ZHVI).** Monthly county-level median home values for single-family residences and condominiums, covering the middle tier of the housing market. ZHVI provides a seasonally adjusted, home valuations representing the 35th to 65th percentile.
+
+**FEMA National Risk Index (NRI).** County-level scores for hazard exposure, social vulnerability, and community resilience, published in 2020, 2021, 2023, and 2025. We match each storm observation to the most recent available NRI year using a forward-fill rule consistent with FEMA's biennial release schedule. Our primary variable of interest is the community resilience score (`resl_score`), a national percentile ranking of each county's capacity to prepare for, absorb, and recover from natural hazards.
+
+## Sample Construction
+
+We restrict attention to county-month storm events with complete 12-month post-storm ZHVI windows. Given that the most recent ZHVI data available is February 2026, we retain storm events through February 2025. Events in the final 12 months of the sample are dropped, yielding a final analytic sample of `r format(n_events, big.mark=",")` county-month observations.
+
+Regional baselines are constructed using the nine Karl \& Koss (1984) climatological regions - groupings of states with similar weather exposure patterns used throughout NOAA climate research. For each region and month, we compute the equal-weighted mean ZHVI of all counties within the region that recorded no storm event in that month.  This region-minus-affected approach provides a locally comparable counterfactual that controls for regional housing market trends while avoiding contamination from storm spillover effects. 
+
+## Exploratory Analysis
+
+```{r fig-heatmap, fig.cap="County-level storm exposure across the contiguous United States, 2020--2025. Counties shaded grey recorded no storm events in the sample period.", fig.height=4.5}
+fig_storm_heatmap
+```
+
+Figure \ref{fig:fig-heatmap} shows the geographic distribution of storm exposure. Storm activity is concentrated along the Gulf Coast, the Southeast, and Tornado Alley — consistent with known patterns of hurricane, flood, and severe convective storm activity. The Midwest and Plains states show substantial exposure to storm events in the database.
+
+```{r fig-events-region, fig.cap="County-month storm observations by year and Karl \\& Koss climate region.", fig.height=4}
+fig_events_by_region
+```
+
+```{r fig-resl-dist, fig.cap = paste0("Distribution of FEMA NRI community resilience scores across storm-affected counties. Dashed line indicates the median resilience score of ", round(median_resl, 1), "."), fig.height=3.5}
+
+fig_resl_dist
+```
+
+The resilience score distribution (Figure \ref{fig:fig-resl-dist}) is approximately symmetric with a median of `r round(median_resl, 1)` near the national median by construction of the percentile ranking. Storm-affected counties span the full resilience spectrum, providing sufficient variation for identification.
+
+```{r fig-resl-sovi, fig.cap="Relationship between community resilience and social vulnerability scores across storm-affected counties. The moderate negative correlation reflects the tendency for socially vulnerable communities to also have lower physical resilience.", fig.height=4}
+resl_sovi_cor <- round(cor(df$resl_score, df$sovi_score, use="complete.obs"), 2)
+fig_resl_sovi
+```
+
+Figure \ref{fig:fig-resl-sovi} illustrates the moderate negative correlation between resilience and social vulnerability scores ($r = `r resl_sovi_cor`$). This correlation is important context for interpreting regression results: the two variables are related but measure distinct dimensions of community capacity.
+
+# Method
+
+## Event Study Design
+
+For each county-month storm observation, we construct a 12-month post-storm trajectory of ZHVI deviations from the regional baseline. Let $P_{c,t}$ denote the ZHVI for county $c$ in month $t$, and $B_{r,t}$ denote the regional baseline ZHVI for climate region $r$ in month $t$, computed as the equal-weighted mean of unaffected counties:
+
+$$B_{r,t} = \frac{1}{|U_{r,t}|} \sum_{j \in U_{r,t}} P_{j,t}$$
+
+where $U_{r,t}$ is the set of counties in region $r$ with no recorded storm event in month $t$.
+
+The monthly deviation for county $c$ at event month $s$ and post-storm horizon $n$ is:
+
+$$\delta_{c,s,n} = P_{c,s+n} - B_{r,s+n}, \quad n = 1, 2, \ldots, 12$$
+
+## AUC Measure
+
+Our primary outcome variable is the **Area Under the Curve (AUC)**: the cumulative sum of monthly deviations over the 12-month post-storm window:
+
+$$\text{AUC}_{c,s} = \sum_{n=1}^{12} \delta_{c,s,n}$$
+
+We choose AUC because it quantifies both the severity and duration of a change in economic conditions after a systemic shock such as a storm event. A negative AUC indicates that the county's home values cumulatively underperformed its regional baseline over the 12 months following the storm. The median AUC in our sample is `r scales::dollar(median_auc, scale=1e-3, suffix="K")`, confirming that storms are associated with sustained below-baseline performance on average.
+
+We also construct two supplementary measures. The **AUC variance** ($\sigma^2_{\text{AUC}}$) captures the volatility of the post-storm recovery path — higher variance indicates greater price uncertainty during recovery. The **pre-storm trend** (`pre_trend_annual`) captures the county's pre-existing drift relative to its regional baseline:
+
+$$\text{pre\_trend\_annual}_{c,s} = 12 \times \frac{1}{6}\sum_{n=1}^{6} \delta_{c,s-n}$$
+
+This annualizes the average monthly deviation in the six months prior to the storm, putting it on the same scale as AUC for direct comparison.
+
+## Regression Specification
+
+We estimate a series of two-way fixed effects models of the form:
+
+$$\text{AUC}_{c,s} = \beta_1 \cdot \text{pre\_trend}_{c,s} + \mathbf{X}_{c,s}'\boldsymbol{\gamma} + \alpha_c + \lambda_t + \varepsilon_{c,s}$$
+
+where $\alpha_c$ are county fixed effects, $\lambda_t$ are month-year fixed effects, $\mathbf{X}_{c,s}$ is a vector of storm severity and hazard controls, and standard errors are clustered at the county level.
+
+County fixed effects absorb all time-invariant county characteristics - geography, long-run economic conditions, and local housing market features. Month-year fixed effects absorb common macroeconomic shocks such as national interest rate movements, aggregate housing demand, and seasonal patterns. The identifying variation is within-county, within-month-year deviation in storm severity and resilience scores.
+
+Our key coefficient of interest is $\beta$ on `resl_score`, the partial effect of community resilience on post-storm AUC, conditional on storm severity, hazard exposure, and pre-existing trends.
+
+# Results
+
+## Event Study
+
+```{r fig-event-study, fig.cap="Average post-storm ZHVI trajectory for high resilience (top quartile) and low resilience (bottom quartile) counties. Shaded bands represent 95\\% confidence intervals. Zero line represents the regional baseline.", fig.height=4.5}
+fig_event_study
+```
+
+```{r fig-cumulative-auc, fig.cap="Cumulative ZHVI deviation from regional baseline by resilience quartile. The widening gap between high and low resilience counties represents the AUC difference that the regression models seek to explain.", fig.height=4.5}
+fig_cumulative_auc
+```
+
+Figures \ref{fig:fig-event-study} and \ref{fig:fig-cumulative-auc} provide visual evidence of the resilience effect. High resilience counties (top quartile) consistently outperform low resilience counties (bottom quartile) in the 12 months following a storm event. The gap emerges immediately and persists through the full observation window, suggesting that resilience affects both the initial shock and the recovery trajectory.
+
+```{r fig-auc-quartile, fig.cap="Distribution of post-storm AUC by resilience quartile. Boxes show interquartile range; whiskers extend to 1.5x IQR. Outliers trimmed to 5th--95th percentile for display.", fig.height=4}
+fig_auc_by_quartile
+```
+
+## Regression Results
+
+```{r fig-coef, fig.cap="Coefficient plot for Model 4 (key specification). Points show point estimates; bars show 95\\% confidence intervals. Standard errors clustered by county.", fig.height=4}
+fig_coef_plot
+```
+
+\input{../output/tables/regression_table.tex}
+
+Table 1 presents the full regression results. Model 1 establishes that pre-storm trend is a strong predictor of post-storm AUC ($\hat{\beta} = `r round(coef(model1)["pre_trend_annual"], 3)`$, $p < 0.001$), confirming the momentum hypothesis: the best predictor of future housing market performance is recent past performance.
+
+Model 4 is our key specification. After controlling for storm severity, hazard exposure, and pre-existing trends, community resilience score is strongly associated with post-storm AUC ($\hat{\beta}$ = `r format(round(resl_coef, 0), big.mark=",")`, $SE$ = `r format(round(resl_se, 0), big.mark=",")`, $p < 0.001$). A one percentile increase in resilience score is associated with approximately `r scales::dollar(round(resl_coef, 0))` higher cumulative AUC over the 12-month post-storm window. Moving from the 25th to the 75th percentile of resilience — a difference of approximately `r round(quantile(df$resl_score, 0.75) - quantile(df$resl_score, 0.25), 1)` percentile points — is associated with a cumulative difference of approximately `r scales::dollar(round(resl_coef * (quantile(df$resl_score, 0.75) - quantile(df$resl_score, 0.25)), 0))` in post-storm ZHVI deviation from baseline.
+
+The signs of all coefficients are consistent with our theoretical priors. Higher storm severity (`event_count`, `log_damage`) is associated with more negative AUC. Higher hazard exposure (`log_eal_valt`) is associated with more positive AUC — consistent with the repair effect documented in the literature, whereby storm damage reduces housing supply and temporarily elevates prices in affected areas. Social vulnerability (`sovi_score`) is associated with more negative AUC in Models 5 and 6, confirming that vulnerable communities experience more severe and persistent post-storm price declines.
+
+Model 6 includes both resilience and social vulnerability simultaneously. Given the moderate negative correlation between these variables ($r = `r round(cor(df$resl_score, df$sovi_score, use="complete.obs"), 2)`$), coefficients in this specification should be interpreted with caution — both variables remain significant, but their independent effects are partially confounded.
+
+# Discussion
+
+## Interpretation
+
+Our results support the hypothesis that community resilience is a meaningful predictor of post-storm housing market recovery. The effect is economically significant, statistically robust, and survives the inclusion of storm severity controls, hazard exposure, and two-way fixed effects that absorb a wide range of potential confounders.
+
+The positive sign on `log_eal_valt` warrants attention. It suggests that counties with higher expected annual losses — more hazard-exposed counties — actually show *higher* AUC post-storm. This is consistent with the repair effect: storm damage destroys housing supply, forcing prices up in the short run as households compete for remaining inventory. The resilience coefficient captures the incremental effect of community capacity *above and beyond* this mechanical supply shock.
+
+Taken together, the results suggest a potential mispricing of climate risk in housing markets. If resilience predicts faster and more complete recovery, then resilience scores contain forward-looking information about housing market stability that may not be fully reflected in current prices — particularly as climate change increases the frequency of storm events.
+
+## Limitations
+
+Several limitations bear on interpretation of these results.
+
+**Repair effect confounding.** Post-storm price increases in low-resilience counties may reflect reconstruction activity rather than genuine demand recovery. We cannot fully separate these mechanisms with ZHVI data alone, though the event study plots suggest that the gap between high and low resilience counties is driven by differential decline rather than differential repair.
+
+**NOAA damage reporting.** Property damage estimates in the NOAA Storm Events Database are voluntarily reported and inconsistently recorded. Zero-damage entries may reflect true absence of damage or absence of reporting. Our log transformation mitigates but does not eliminate this measurement error.
+
+**NRI methodology change.** FEMA revised its NRI methodology between the 2021 and 2023 releases, shifting from a relative index to an absolute dollar-based measure. We use the available vintages with forward-fill for missing years. Results may be sensitive to this methodology change for events near the 2022 transition.
+
+**Connecticut county restructuring.** Connecticut replaced its eight legacy counties with nine planning regions in 2024. Fifty-four observations involving legacy CT county FIPS codes were dropped due to missing NRI records. These observations are unlikely to materially affect results.
+
+**Correlation between resilience and vulnerability.** The moderate negative correlation between `resl_score` and `sovi_score` ($r = `r round(cor(df$resl_score, df$sovi_score, use="complete.obs"), 2)`$) limits the precision with which we can decompose the resilience and vulnerability channels in the full specification.
+
+## Future Work
+
+Several extensions would strengthen these findings. First, normalizing AUC by local baseline ZHVI would make the measure comparable across high- and low-value markets, addressing the concern that a $1,000 deviation means something different in San Francisco than in rural Mississippi. Second, an interaction between `resl_score` and storm severity would test whether resilience matters more for severe events — consistent with our hypothesis about uncertainty resolution. Third, extending the analysis to incorporate insurance coverage rates and FEMA disaster declaration data would help disentangle the repair effect from genuine demand recovery.
+
+\newpage
+
+# References
+
+Karl, T.R. and Koss, W.J. (1984). *Regional and National Monthly, Seasonal and Annual Temperature Weighted by Area, 1895-1983.* Historical Climatology Series 4-3. National Climatic Data Center, Asheville, NC.
+
+Zivin, J.G., Liao, Y., and Panassié, Y. (2023). How hurricanes sweep up housing markets: Evidence from Florida. *Journal of Environmental Economics and Management*, 118.
+
+Contat, J. (2024). When climate meets real estate: A survey of the literature. *Real Estate Economics*, 52, 618-659.

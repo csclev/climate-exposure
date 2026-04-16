@@ -1,0 +1,37 @@
+
+\begingroup
+\centering
+\begin{tabular}{lcccccc}
+   \tabularnewline \midrule \midrule
+   Dependent Variable: & \multicolumn{6}{c}{AUC}\\
+   Model:                     & (1)            & (2)            & (3)              & (4)              & (5)              & (6)\\  
+   \midrule
+   \emph{Variables}\\
+   Pre-Storm Trend (Annual)   & 0.7143$^{***}$ & 0.7144$^{***}$ & 0.7108$^{***}$   & 0.7078$^{***}$   & 0.7092$^{***}$   & 0.7076$^{***}$\\   
+                              & (0.0474)       & (0.0474)       & (0.0474)         & (0.0476)         & (0.0473)         & (0.0475)\\   
+   Event Count                &                & 103.7          & 90.86            & 83.25            & 89.95            & 83.87\\   
+                              &                & (135.8)        & (133.2)          & (129.5)          & (132.6)          & (129.7)\\   
+   Log Property Damage        &                & -185.3         & -164.6           & -167.8           & -157.6           & -164.7\\   
+                              &                & (201.2)        & (202.2)          & (203.0)          & (203.1)          & (203.6)\\   
+   Log Expected Annual Loss   &                &                & 17,323.8$^{***}$ & 14,800.8$^{***}$ & 20,210.8$^{***}$ & 16,246.7$^{***}$\\   
+                              &                &                & (5,230.9)        & (5,205.0)        & (5,373.8)        & (5,380.0)\\   
+   Resilience Score           &                &                &                  & 675.5$^{***}$    &                  & 588.8$^{***}$\\   
+                              &                &                &                  & (125.6)          &                  & (125.0)\\   
+   Social Vulnerability Score &                &                &                  &                  & -485.9$^{***}$   & -188.9$^{**}$\\   
+                              &                &                &                  &                  & (94.16)          & (79.98)\\   
+   \midrule
+   \emph{Fixed-effects}\\
+   month\_year                & Yes            & Yes            & Yes              & Yes              & Yes              & Yes\\  
+   stcofips                   & Yes            & Yes            & Yes              & Yes              & Yes              & Yes\\  
+   \midrule
+   \emph{Fit statistics}\\
+   Observations               & 39,104         & 39,104         & 39,104           & 39,104           & 39,104           & 39,104\\  
+   R$^2$                      & 0.99423        & 0.99423        & 0.99425          & 0.99428          & 0.99426          & 0.99428\\  
+   Within R$^2$               & 0.70233        & 0.70236        & 0.70304          & 0.70462          & 0.70378          & 0.70471\\  
+   \midrule \midrule
+   \multicolumn{7}{l}{\emph{Clustered (month\_year) standard-errors in parentheses}}\\
+   \multicolumn{7}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+\end{tabular}
+\par\endgroup
+
+
