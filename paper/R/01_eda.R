@@ -58,9 +58,9 @@ fig_auc_dist <- df |>
              linetype = "dashed", linewidth = 0.8) +
   scale_x_continuous(labels = dollar_format(suffix = "K")) +
   labs(
-    title    = "Distribution of Post-Storm AUC",
+    title    = "Distribution of Post-Storm CIR",
     subtitle = "Cumulative 12-month ZHVI deviation from regional baseline. Dashed line = median.",
-    x        = "AUC (thousands USD)",
+    x        = "CIR (index points)",
     y        = "Event Count"
   ) +
   theme_minimal()
@@ -118,6 +118,9 @@ fig_storm_heatmap <- ggplot(counties_sf) +
     plot.title       = element_text(size = 13, face = "bold"),
     plot.subtitle    = element_text(size = 9, color = "grey40")
   )
+
+# Correlation of resilience and social vulnerability
+resl_sovi_cor <- round(cor(df$resl_score, df$sovi_score, use="complete.obs"), 2)
 
 # ---- Save all figures ----
 dir.create("./output/figures", recursive = TRUE, showWarnings = FALSE)

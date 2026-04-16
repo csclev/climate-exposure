@@ -8,6 +8,7 @@ library(here)
 
 # ---- Analysis dataset (one row per county-month storm event) ----
 
+# Note: 'auc' in code corresponds to 'Cumulative Impulse Response (CIR)' in the paper
 
 df <- read_csv(here("data/processed/analysis_dataset.csv"), 
                col_types = cols(stcofips = col_character())) |>
@@ -47,3 +48,21 @@ cat(sprintf("  Analysis dataset: %s events, %s counties\n",
 cat(sprintf("  Monthly deviations: %s rows\n",
             format(nrow(monthly_dev), big.mark = ",")))
 
+# ---- Baseline Resilience Indicators for Communities (BRIC)
+bric <- read_csv(here::here("data/raw/bric2020_us.csv")) |>
+  mutate(stcofips = str_pad(as.character(GEOID), 5, pad = "0")) |>
+  select(stcofips,
+         bric_social  = SOCIAL,
+         bric_econ    = ECONOM,
+         bric_housing = `HOUSING/INFRA`,
+         bric_comm    = `COMM CAPITAL`,
+         bric_instit  = INSTITUTIONAL,
+         bric_environ = ENVIRONMENT,
+         bric_total   = `TOT RESIL2020`)
+
+df <- df |>
+  left_join(bric, by = "stcofips")
+
+cat(sprintf("BRIC join: %d of %d rows matched\n",
+            sum(!is.na(df$bric_total)),
+            nrow(df)))

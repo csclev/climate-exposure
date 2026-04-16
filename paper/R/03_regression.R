@@ -4,13 +4,10 @@
 
 library(tidyverse)
 library(fixest)
-library(modelsummary)
-library(stargazer)
-
 
 # ---- Run Models ----
 
-# Model 1: Baseline — past performance predicts future performance
+# Model 1: Baseline - past performance predicts future performance
 model1 <- feols(
   auc ~ pre_trend_annual | month_year + stcofips,
   cluster = ~stcofips,
@@ -48,7 +45,7 @@ model5 <- feols(
   data    = df
 )
 
-# Model 6: Full spec — note corr(resl_score, sovi_score) = -0.53
+# Model 6: Full spec - note corr(resl_score, sovi_score) = -0.53
 model6 <- feols(
   auc ~ pre_trend_annual + event_count + log_damage + log_eal_valt +
     resl_score + sovi_score | month_year + stcofips,
@@ -56,25 +53,35 @@ model6 <- feols(
   data    = df
 )
 
+# Model 7: BRIC sub-components - decomposes composite resl_score into
+# physical infrastructure vs economic vs social channels
+# Note: BRIC 2020 data only, treated as time-invariant
+model7 <- feols(
+  auc ~ pre_trend_annual + event_count + log_damage + log_eal_valt +
+    bric_housing + bric_econ + bric_social | month_year ,
+  cluster = ~stcofips,
+  data    = df
+)
+
 models <- list(
-  "M1: Baseline"    = model1,
-  "M2: + Severity"  = model2,
-  "M3: + Exposure"  = model3,
-  "M4: + Resilience"= model4,
-  "M5: + Vulnerability" = model5,
-  "M6: Full"        = model6
+  "M1: Baseline"         = model1,
+  "M2: + Severity"       = model2,
+  "M3: + Exposure"       = model3,
+  "M4: + Resilience"     = model4,
+  "M5: + Vulnerability"  = model5,
+  "M6: Full"             = model6
 )
 
 # ---- Coefficient plot for Model 4 (key model) ----
-coef_df <- broom::tidy(model4, conf.int = TRUE) |>
+coef_df <- broom::tidy(model6, conf.int = TRUE) |>
   filter(term != "(Intercept)", term != "log_eal_valt") |>
   mutate(
     term = recode(term,
-      "pre_trend_annual" = "Pre-Storm Trend (Annual)",
-      "event_count"      = "Event Count",
-      "log_damage"       = "Log Damage",
-      "log_eal_valt"     = "Log Expected Annual Loss",
-      "resl_score"       = "Resilience Score"
+                  "pre_trend_annual" = "Pre-Storm Trend (Annual)",
+                  "event_count"      = "Event Count",
+                  "log_damage"       = "Log Property Damage",
+                  "resl_score"       = "Resilience Score",
+                  "sovi_score"       = "Social Vulnerability Score"
     ),
     significant = p.value < 0.05
   )
@@ -84,52 +91,65 @@ fig_coef_plot <- coef_df |>
   geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
   geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2) +
   geom_point(size = 3) +
-  annotate("text", x = Inf, y = -Inf, 
-           label = "Note: log(EAL) excluded",
-           hjust = 1.3, vjust = -0.5, size = 3, color = "grey40", fontface = "italic") +
+  annotate("text", x = Inf, y = -Inf,
+           label = "Note: log(EAL) excluded - control variable, different scale",
+           hjust = 1.05, vjust = -0.5, size = 3, color = "grey40", fontface = "italic") +
   scale_color_manual(values = c("TRUE" = "steelblue", "FALSE" = "grey60"),
                      labels = c("TRUE" = "p < 0.05", "FALSE" = "p >= 0.05")) +
   labs(
-    title    = "Coefficient Plot: Model 4 (Key Model)",
+    title    = "Coefficient Plot: Model 6 (Preferred Specification)",
     subtitle = "Two-way FE (county + month-year). Clustered SE by county. Bars = 95% CI.",
-    x        = "Estimate (USD)",
+    x        = "Estimate (index points)",
     y        = NULL,
     color    = NULL
   ) +
   theme_minimal() +
   theme(legend.position = "bottom")
 
-# ---- Regression table via modelsummary ----
+# ---- Regression table via etable ----
 dir.create("./output/tables", recursive = TRUE, showWarnings = FALSE)
 
-
-etable(models,
-       se       = "cluster",
-       tex      = TRUE,
-       file     = here::here("output/tables/regression_table.tex"),
-       dict     = c(
-         pre_trend_annual = "Pre-Storm Trend (Annual)",
-         event_count      = "Event Count",
-         log_damage       = "Log Property Damage",
-         log_eal_valt     = "Log Expected Annual Loss",
-         resl_score       = "Resilience Score",
-         sovi_score       = "Social Vulnerability Score",
-         auc              = "Area Under Curve (AUC)"
-       ),
-       title    = "Two-Way Fixed Effects Estimates of Post-Storm ZHVI Deviation (AUC)"
+etable(
+  models,
+  vcov = ~stcofips,
+  tex   = TRUE,
+  file  = here::here("output/tables/regression_table.tex"),
+  dict  = c(
+    pre_trend_annual = "Pre-Storm Trend (Annual)",
+    event_count      = "Event Count",
+    log_damage       = "Log Property Damage",
+    log_eal_valt     = "Log Expected Annual Loss",
+    resl_score       = "Resilience Score",
+    sovi_score       = "Social Vulnerability Score",
+    bric_housing     = "BRIC: Housing/Infrastructure",
+    bric_econ        = "BRIC: Economic Capacity",
+    bric_social      = "BRIC: Social Capital",
+    auc              = "Cumulative Impulse Response (CIR)"
+  ),
+  title = "Two-Way Fixed Effects Estimates of Post-Storm CIR",
+  notes = "Standard errors clustered by county."
 )
 
-# Save coefficient plot
+# ---- Save coefficient plot ----
+dir.create("./output/figures", recursive = TRUE, showWarnings = FALSE)
 ggsave("./output/figures/fig_coef_plot.pdf", fig_coef_plot, width = 7, height = 5)
 
 cat("Regression models estimated\n")
 cat("Table saved to ./output/tables/regression_table.tex\n")
 cat("Coefficient plot saved to ./output/figures/fig_coef_plot.pdf\n")
 
-# ---- Key scalars for inline R in report.Rmd ----
-resl_coef  <- coef(model4)["resl_score"]
-resl_se    <- sqrt(diag(vcov(model4)))["resl_score"]
-resl_pval  <- summary(model4)$coeftable["resl_score", "Pr(>|t|)"]
-within_r2_m1 <- fitstat(model1, "war2")$war
-within_r2_m4 <- fitstat(model4, "war2")$war
-r2_gain    <- within_r2_m4 - within_r2_m1
+# ---- Key scalars for inline R blocks in report.Rmd ----
+resl_coef    <- coef(model6)["resl_score"]
+resl_se      <- sqrt(diag(vcov(model6)))["resl_score"]
+resl_pval    <- summary(model6)$coeftable["resl_score", "Pr(>|t|)"]
+within_r2_m1 <- fitstat(model1, "war2")$war2
+within_r2_m6 <- fitstat(model6, "war2")$war2
+r2_gain      <- within_r2_m6 - within_r2_m1
+
+# BRIC component coefficients from Model 7
+bric_housing_coef <- coef(model7)["bric_housing"]
+bric_econ_coef    <- coef(model7)["bric_econ"]
+bric_social_coef  <- coef(model7)["bric_social"]
+bric_housing_pval <- summary(model7)$coeftable["bric_housing", "Pr(>|t|)"]
+bric_econ_pval    <- summary(model7)$coeftable["bric_econ",    "Pr(>|t|)"]
+bric_social_pval  <- summary(model7)$coeftable["bric_social",  "Pr(>|t|)"]
