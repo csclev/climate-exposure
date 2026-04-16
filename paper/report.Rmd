@@ -86,27 +86,26 @@ We make a simplifying assumption in this study to combine the post-storm effects
 
 ## Event Study Design
 
-For each county-month storm observation, we construct a 12-month post-storm trajectory of ZHVI deviations from the regional baseline. Let $P_{c,t}$ denote the ZHVI for county $c$ in month $t$, and $B_{r,t}$ denote the regional baseline ZHVI for climate region $r$ in month $t$, computed as the equal-weighted mean of unaffected counties:
+For each county that was affected by a storm in the NOAA database, we examine the ZHVI index before and after the event. All county ZHVI are rebased to 100 at time $t=0$, so deviations represent percentage changes from the time of the storm event. A value above 100 represents housing market appreciation, and values under 100 represent price declines. 
 
-$$B_{r,t} = \frac{1}{|U_{r,t}|} \sum_{j \in U_{r,t}} P_{j,t}$$
+A regional baseline is determined for each county based on the respective climatological region that includes an even weighted mean of all available counties with no storm reports. 
 
-where $U_{r,t}$ is the set of counties in region $r$ with no recorded storm event in month $t$.
+This study focuses on the deviations of the storm affected counties from the respective regional baseline. For county $c$ that was affected by storms at month and year $t$, the deviation $\delta$ is measured in relative period $n$ as 
 
-The monthly deviation for county $c$ at event month $s$ and post-storm horizon $n$ is:
-
-$$\delta_{c,s,n} = P_{c,s+n} - B_{r,s+n}, \quad n = 1, 2, \ldots, 12$$
+$$\delta_{c,t+n} = Z_{c,t+n} - B_{c,t+n}$$
+where $Z_{c,t+n}$ is the rebased ZHVI of the affected county, and $B_{c,t+n}$ is the calculated regional unaffected baseline.
 
 ## Cumulative Impulse Response
 
 Our primary outcome variable is the **Cumulative Impulse Response (CIR)**: the cumulative sum of monthly deviations over the 12-month post-storm window:
 
-$$\text{CIR}_{c,s} = \sum_{n=1}^{12} \delta_{c,s,n}$$
+$$\text{CIR}_{c,t} = \sum_{n=1}^{12} \delta_{c,t+n}$$
 
-We choose CIR because it quantifies both the severity and duration of a change in economic conditions after a systemic shock such as a storm event. A negative CIR indicates that the county's home values cumulatively underperformed its regional baseline over the 12 months following the storm. The median CIR in our sample is `r scales::dollar(median_auc, scale=1e-3, suffix="K")`, confirming that storms are associated with sustained below-baseline performance on average.
+We choose CIR because it quantifies both the severity and duration of a change in economic conditions after a systemic shock such as a storm event. A negative CIR indicates that the county's home values cumulatively underperformed its regional baseline over the 12 months following the storm. The median CIR in our sample is `r round(median_auc, 3)`, confirming that storms are associated with sustained below-baseline performance on average.
 
 The **pre-storm trend** (`pre_trend_annual`) captures the county's pre-existing drift relative to its regional baseline:
 
-$$\text{pre\_trend\_annual}_{c,s} = 12 \times \frac{1}{6}\sum_{n=1}^{6} \delta_{c,s-n}$$
+$$\text{pre\_trend\_annual}_{c,t} = 12 \times \frac{1}{6}\sum_{n=1}^{6} \delta_{c,t-n}$$
 
 This annualizes the average monthly deviation in the six months prior to the storm, putting it on the same scale as CIR for direct comparison.
 
@@ -114,7 +113,7 @@ This annualizes the average monthly deviation in the six months prior to the sto
 
 We estimate a series of two-way fixed effects models of the form:
 
-$$\text{CIR}_{c,s} = \beta_1 \cdot \text{pre\_trend}_{c,s} + \mathbf{X}_{c,s}'\boldsymbol{\gamma} + \alpha_c + \lambda_t + \varepsilon_{c,s}$$
+$$\text{CIR}_{c,t} = \beta_1 \cdot \text{pre\_trend}_{c,t} + \mathbf{X}_{c,t}'\boldsymbol{\gamma} + \alpha_c + \lambda_t + \varepsilon_{c,t}$$
 
 where $\alpha_c$ are county fixed effects, $\lambda_t$ are month-year fixed effects, $\mathbf{X}_{c,s}$ is a vector of storm severity and hazard controls, and standard errors are clustered at the county level.
 
@@ -137,18 +136,14 @@ Figures \ref{fig:fig-event-study} and \ref{fig:fig-cumulative-auc} provide visua
 
 \input{../output/tables/regression_table.tex}
 
-Table 1 presents the full regression results. Model 1 establishes that pre-storm trend is a strong predictor of post-storm CIR ($\hat{\beta} = `r round(coef(model1)["pre_trend_annual"], 3)`$, $p < 0.001$), confirming the momentum hypothesis: the best predictor of future housing market performance is recent past performance.
+Table 1 presents the full regression results. Model 1 establishes that pre-storm trend is a strong predictor of post-storm CIR ($\hat{\beta} = `r round(coef(model2)["pre_trend_annual"], 3)`$, $p < 0.001$), confirming the momentum hypothesis: the best predictor of future housing market performance is recent past performance. The number of storm events is significant with positive effect ($\hat{\beta} = `r round(coef(model2)["event_count"], 3)`$, $p < 0.001$). This is consistent with the repairs-cost hypothesis of storm events - that storms cause a positive increase in home value prices due to reduced supply and increased repair costs rather than higher demand. Both storm severity controls (`log_damage`, `log_eal_valt`) are included but not independently significant after absorbing county and time fixed effects, likely reflecting the noise in NOAA damage reporting. '
 
-Model 2 shows that the number of storm events is significant with positive effect ($\hat{\beta} = `r round(coef(model2)["event_count"], 3)`$, $p < 0.001$). This is consistent with the repairs-cost hypothesis of storm events - that storms cause a positive increase in home value prices due to reduced supply and increased repair costs rather than higher demand. 
-
-In Model 3, both storm severity controls (`log_damage`, `log_eal_valt`) are included but not independently significant after absorbing county and time fixed effects, likely reflecting the noise in NOAA damage reporting.
-
-Model 6 is our preferred specification, including both resilience and social vulnerability to isolate the physical and institutional resilience channel from socioeconomic capacity. After controlling for storm severity, hazard exposure, social vulnerability, and pre-existing trends, community resilience score remains strongly associated with 
+Model 2 establishes that community resiliency correlates positively with improved housing market recovery during the post storm period (p > 0.001). Model 3 is our preferred specification, including both resilience and social vulnerability to isolate the physical and institutional resilience channel from socioeconomic capacity. After controlling for storm severity, hazard exposure, social vulnerability, and pre-existing trends, community resilience score remains strongly associated with 
 post-storm CIR ($\hat{\beta}$ = `r round(resl_coef, 3)`, $SE$ = `r round(resl_se, 3)`, $p < 0.001$). A one percentile increase in resilience score is associated with `r round(resl_coef, 2)` additional index points of cumulative post-storm deviation from the regional baseline.
 
-The signs of all coefficients are consistent with our theoretical priors. Higher storm severity (`event_count`, `log_damage`) is associated with more negative CIR. Higher hazard exposure (`log_eal_valt`) is associated with more positive CIR, consistent with the repair effect documented in the literature, whereby storm damage reduces housing supply and temporarily elevates prices in affected areas.
-
 To interpret this practically, the interquartile range of resilience scores in our sample spans approximately `r round(quantile(df$resl_score, 0.75) - quantile(df$resl_score, 0.25), 1)` percentile points. A county at the 75th percentile of resilience is associated with `r round(resl_coef * (quantile(df$resl_score, 0.75) - quantile(df$resl_score, 0.25)), 1)` additional index points of cumulative post-storm performance relative to a county at the 25th percentile. Since the CIR index is anchored at 100 at the storm month, this represents approximately `r round(resl_coef * (quantile(df$resl_score, 0.75) - quantile(df$resl_score, 0.25)), 1)`% of median home value accumulated over 12 months. On a \$300,000 home, roughly \$`r format(round(300000 * resl_coef * (quantile(df$resl_score, 0.75) - quantile(df$resl_score, 0.25)) / 100), big.mark=",")` in cumulative value difference.
+
+Model 4 examines the heterogeneous effect of resiliency based on the 3 groups of the distribution - low (< 48th percentile), middle (48th - 62nd percentile as baseline), high (> 62nd percentile). High resiliency counties demonstrate better post-storm housing market performance than the middle or low resiliency groups  ( $\hat{\beta}$ = `r round(coef(model8)["resl_zoneHigh"], 2)`, p < 0.001). This asymmetry suggests that the effect is concentrated in the high resilience counties, whereas low and middle distributional groups are statistically indistinguishable.
 
 # Discussion
 

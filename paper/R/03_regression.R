@@ -63,13 +63,33 @@ model7 <- feols(
   data    = df
 )
 
+
+# Model 8: Heterogeneous treatment effects for resiliency
+df <- df |>
+  mutate(resl_zone = case_when(
+    resl_score < 48  ~ "Low",
+    resl_score > 62  ~ "High",
+    TRUE             ~ "Middle"
+  )) |>
+  mutate(resl_zone = relevel(factor(resl_zone), ref = "Middle"))
+
+model8 <- feols(
+  auc ~ pre_trend_annual + event_count + log_damage + log_eal_valt +
+   sovi_score + resl_zone | month_year + stcofips,
+  cluster = ~stcofips,
+  data    = df
+)
+model8
+
+
 models <- list(
-  "M1: Baseline"         = model1,
+  #"M1: Baseline"         = model1,
   "M2: + Severity"       = model2,
-  "M3: + Exposure"       = model3,
+  #"M3: + Storms "       = model3,
   "M4: + Resilience"     = model4,
-  "M5: + Vulnerability"  = model5,
-  "M6: Full"             = model6
+  #"M5: + Vulnerability"  = model5,
+  "M6: Full"             = model6,
+  "M7: Full with HTE"    = model8
 )
 
 # ---- Coefficient plot for Model 4 (key model) ----
@@ -124,10 +144,11 @@ etable(
     bric_housing     = "BRIC: Housing/Infrastructure",
     bric_econ        = "BRIC: Economic Capacity",
     bric_social      = "BRIC: Social Capital",
-    auc              = "Cumulative Impulse Response (CIR)"
+    auc              = "Cumulative Impulse Response (CIR)",
+    resl_zoneHigh    = "High Resiliency (pctl >62%)",
+    resl_zoneLow     = "Low Resiliency (pctl <48%)"
   ),
-  title = "Two-Way Fixed Effects Estimates of Post-Storm CIR",
-  notes = "Standard errors clustered by county."
+  title = "Two-Way Fixed Effects Estimates of Post-Storm CIR"
 )
 
 # ---- Save coefficient plot ----
