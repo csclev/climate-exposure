@@ -47,12 +47,12 @@ model5 <- feols(
 
 # Model 6: Full spec - note corr(resl_score, sovi_score) = -0.53
 model6 <- feols(
-  auc ~ pre_trend_annual + event_count + log_damage + log_eal_valt +
+  auc ~ pre_trend_annual + event_count + log_damage + log_eal_valt  + log_damage*log_eal_valt +
     resl_score + sovi_score | month_year + stcofips,
   cluster = ~stcofips,
   data    = df
 )
-
+model6
 # Model 7: BRIC sub-components - decomposes composite resl_score into
 # physical infrastructure vs economic vs social channels
 # Note: BRIC 2020 data only, treated as time-invariant
