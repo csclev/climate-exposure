@@ -9,31 +9,34 @@ library(scales)
 
 options(tigris_use_cache = TRUE)
 
-df <- df |>
-  mutate(climate_region_display = recode(
-    climate_region,"West North Central" = "W. North Central")
-    )
-df |> 
-  filter(climate_region == "West") |> 
-  count(year)
-# ---- 1. Storm events by year and climate region ----
-fig_events_by_region <- df |>
-  count(year, climate_region_display) |>
-  ggplot(aes(x = year, y = n, fill = climate_region_display)) +
+# ---- 1. Distribution of Event Types ----
+fig_events_by_type <- df |>
+  pivot_longer(
+    cols      = c(evt_wind, evt_tornado, evt_hail, evt_flood, evt_other),
+    names_to  = "event_category",
+    values_to = "flag"
+  ) |>
+  filter(flag == 1) |>
+  mutate(event_category = recode(event_category,
+                                 "evt_wind"    = "Wind",
+                                 "evt_tornado" = "Tornado",
+                                 "evt_hail"    = "Hail",
+                                 "evt_flood"   = "Flood",
+                                 "evt_other"   = "Other"
+  )) |>
+  count(year, event_category) |>
+  ggplot(aes(x = year, y = n, fill = event_category)) +
   geom_col(position = "dodge") +
   scale_fill_brewer(palette = "Paired") +
   scale_y_continuous(labels = comma) +
   labs(
-    title    = "Storm Events by Year and Climate Region",
-    x        = NULL,
-    y        = "County-Month Storm Observations",
-    fill     = "Climate Region"
+    title = "Storm Events by Year and Event Type",
+    x     = NULL,
+    y     = "County-Month Storm Observations",
+    fill  = "Event Type"
   ) +
   theme_minimal() +
-  theme(legend.position = "bottom",
-        legend.text = element_text(size = 8),
-        legend.key.size = unit(0.4, "cm")) +
-  guides(fill = guide_legend(nrow = 2))
+  theme(legend.position = "bottom")
 
 # ---- 2. Distribution of resl_score ----
 fig_resl_dist <- df |>
@@ -52,14 +55,13 @@ fig_resl_dist <- df |>
 
 # ---- 3. Distribution of AUC ----
 fig_auc_dist <- df |>
-  ggplot(aes(x = auc / 1000)) +
+  ggplot(aes(x = auc)) +
   geom_histogram(bins = 80, fill = "steelblue", color = "white", linewidth = 0.2) +
-  geom_vline(aes(xintercept = median(auc / 1000)), color = "firebrick",
+  geom_vline(aes(xintercept = median(auc)), color = "firebrick",
              linetype = "dashed", linewidth = 0.8) +
-  scale_x_continuous(labels = dollar_format(suffix = "K")) +
   labs(
     title    = "Distribution of Post-Storm CIR",
-    subtitle = "Cumulative 12-month ZHVI deviation from regional baseline. Dashed line = median.",
+    subtitle = "Cumulative 9-month ZHVI deviation from neighbor baseline. Dashed line = median.",
     x        = "CIR (index points)",
     y        = "Event Count"
   ) +
@@ -68,6 +70,7 @@ fig_auc_dist <- df |>
 # ---- 4. resl_score vs sovi_score correlation ----
 fig_resl_sovi <- df |>
   distinct(stcofips, resl_score, sovi_score) |>
+  slice(1, .by = stcofips) |>
   ggplot(aes(x = sovi_score, y = resl_score)) +
   geom_point(alpha = 0.2, size = 0.8, color = "steelblue") +
   geom_smooth(method = "lm", color = "firebrick", se = TRUE, linewidth = 0.8) +
@@ -123,17 +126,17 @@ fig_storm_heatmap <- ggplot(counties_sf) +
 resl_sovi_cor <- round(cor(df$resl_score, df$sovi_score, use="complete.obs"), 2)
 
 # ---- Save all figures ----
-dir.create("./output/figures", recursive = TRUE, showWarnings = FALSE)
+dir.create("./paper/output/figures", recursive = TRUE, showWarnings = FALSE)
 
-ggsave("./output/figures/fig_events_by_region.pdf", fig_events_by_region,
+ggsave("./paper/output/figures/fig_events_by_type.pdf", fig_events_by_type,
        width = 8, height = 5)
-ggsave("./output/figures/fig_resl_dist.pdf",        fig_resl_dist,
+ggsave("./paper/output/figures/fig_resl_dist.pdf",        fig_resl_dist,
        width = 7, height = 4)
-ggsave("./output/figures/fig_auc_dist.pdf",         fig_auc_dist,
+ggsave("./paper/output/figures/fig_auc_dist.pdf",         fig_auc_dist,
        width = 7, height = 4)
-ggsave("./output/figures/fig_resl_sovi.pdf",        fig_resl_sovi,
+ggsave("./paper/output/figures/fig_resl_sovi.pdf",        fig_resl_sovi,
        width = 6, height = 5)
-ggsave("./output/figures/fig_storm_heatmap.pdf",    fig_storm_heatmap,
+ggsave("./paper/output/figures/fig_storm_heatmap.pdf",    fig_storm_heatmap,
        width = 10, height = 6)
 
-cat("EDA figures saved to ./output/figures/\n")
+cat("EDA figures saved to ./paper/output/figures/\n")
