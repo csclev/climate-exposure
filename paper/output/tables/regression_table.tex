@@ -1,0 +1,43 @@
+
+\begingroup
+\centering
+\begin{tabular}{lccccc}
+   \tabularnewline \midrule \midrule
+   Dependent Variable: & \multicolumn{5}{c}{Cumulative Impulse Response (CIR)}\\
+   Model:                                             & (1)             & (2)             & (3)             & (4)             & (5)\\  
+   \midrule
+   \emph{Variables}\\
+   Pre-Storm Trend (Annual)                           & -0.3423$^{***}$ & -0.3426$^{***}$ & -0.3384$^{***}$ & -0.3381$^{***}$ & -0.3374$^{***}$\\   
+                                                      & (0.0401)        & (0.0400)        & (0.0398)        & (0.0397)        & (0.0393)\\   
+   Event Count                                        &                 & 0.0268          & 0.0264          & 0.0222          & 0.0171\\   
+                                                      &                 & (0.0194)        & (0.0188)        & (0.0194)        & (0.0193)\\   
+   Log Property Damage                                &                 & -0.0494         & -0.0520         & 0.3878$^{*}$    & -0.2310$^{**}$\\   
+                                                      &                 & (0.0616)        & (0.0613)        & (0.1953)        & (0.0924)\\   
+   Resilience Score                                   &                 &                 & 0.0884$^{**}$   & 0.1170$^{***}$  &   \\   
+                                                      &                 &                 & (0.0390)        & (0.0422)        &   \\   
+   Log Property Damage $\times$ Resilience Score      &                 &                 &                 & -0.0083$^{**}$  &   \\   
+                                                      &                 &                 &                 & (0.0034)        &   \\   
+   Resiliency Low (Q1)                                &                 &                 &                 &                 & -3.051\\   
+                                                      &                 &                 &                 &                 & (2.595)\\   
+   Resiliency High (Q4)                               &                 &                 &                 &                 & 2.762\\   
+                                                      &                 &                 &                 &                 & (2.324)\\   
+   Log Property Damage $\times$ Resiliency Low (Q1)   &                 &                 &                 &                 & 0.5863$^{***}$\\   
+                                                      &                 &                 &                 &                 & (0.1732)\\   
+   Log Property Damage $\times$ Resiliency High (Q4)  &                 &                 &                 &                 & 0.1714\\   
+                                                      &                 &                 &                 &                 & (0.1517)\\   
+   \midrule
+   \emph{Fixed-effects}\\
+   month\_year                                        & Yes             & Yes             & Yes             & Yes             & Yes\\  
+   stcofips                                           & Yes             & Yes             & Yes             & Yes             & Yes\\  
+   \midrule
+   \emph{Fit statistics}\\
+   Observations                                       & 8,172           & 8,172           & 8,172           & 8,172           & 8,172\\  
+   R$^2$                                              & 0.46773         & 0.46782         & 0.46906         & 0.46970         & 0.47006\\  
+   Within R$^2$                                       & 0.06279         & 0.06295         & 0.06514         & 0.06626         & 0.06690\\  
+   \midrule \midrule
+   \multicolumn{6}{l}{\emph{Clustered (stcofips \& month\_year) standard-errors in parentheses}}\\
+   \multicolumn{6}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+\end{tabular}
+\par\endgroup
+
+
