@@ -66,7 +66,8 @@ We combine three datasets at the county-month level:
 
 ## Sample Construction
 
-We retain storm events with complete `r POST_EVENT_MONTHS`-month post-storm and `r PRE_EVENT_MONTHS`-month pre-storm ZHVI windows. Events after `r format(CUTOFF, "%B %Y")` are dropped due to insufficient post-storm  coverage. Alaska, Hawaii, and Puerto Rico are excluded. Final analytic sample: `r format(n_events, big.mark=",")` county-month observations.
+We retain storm events with complete `r POST_EVENT_MONTHS`-month post-storm and `r PRE_EVENT_MONTHS`-month pre-storm ZHVI windows. Events are aggregated at the count-month level. Events after `r format(CUTOFF, "%B %Y")` are dropped due to insufficient post-storm  coverage. Alaska, Hawaii, and Puerto Rico are excluded. Final analytic sample: `r format(n_events, big.mark=",")` county-month observations.
+
 
 
 ## Exploratory Analysis
@@ -75,13 +76,13 @@ We retain storm events with complete `r POST_EVENT_MONTHS`-month post-storm and 
 fig_storm_heatmap
 ```
 
-Figure \ref{fig:fig-heatmap} shows the geographic distribution of storm exposure. Storm activity is concentrated along the Gulf Coast, the Southeast, and Tornado Alley — consistent with known patterns of hurricane, flood, and severe convective storm activity. The Midwest and Plains states show substantial exposure to storm events in the database.
+Figure \ref{fig:fig-heatmap} shows the geographic distribution of storm exposure. Storm activity is concentrated along the Gulf Coast, the Southeast, and Tornado Alley - consistent with known patterns of hurricane, flood, and severe convective storm activity. The Midwest and Plains states show substantial exposure to storm events in the database.
 
 # Method
 
 ## Prior Research
 
-Our methodology is grounded in the Local Projections Difference in Differences (LP DiD) work of  Dube, Girardi, Jorda' and Taylor (2025). LP-DiD uses a local projects framework with difference-in-differences design to measure the effect of a shock to the system over a post-treatment window of time to capture the full impact of the shock. The estimator considers both the magnitude of the response to an economic shock and the duration of the aftereffects. Using multiple time based regressions, the LP framework estimates a time series curve for all periods after the shock event that are summed to a single impulse response representing the the total post-shock effect.
+Our methodology is grounded in the Local Projections Difference in Differences (LP DiD) work of Dube, Girardi, Jorda' and Taylor (2025). LP-DiD uses a local projects framework with difference-in-differences design to measure the effect of a shock to the system over a post-treatment window of time to capture the full impact of the shock. The estimator considers both the magnitude of the response to an economic shock and the duration of the aftereffects. Using multiple time based regressions, the LP framework estimates a time series curve for all periods after the shock event that are summed to a single impulse response representing the the total post-shock effect.
 
 We make a simplifying assumption in this study to combine the post-storm effects into a single outcome before analysis. The tradeoff is that our estimate loses precision in estimating the time and magnitude of the shock as separate quantities. For the consideration of climate resilience we care about both magnitude of price disruption and duration of recovery as both meaningful outcomes of storm events. The outcome of measure (Cumulative Impulse Response) accumulates the effect magnitude over time into a single measurable outcome.
 
@@ -112,7 +113,7 @@ $$\text{CIR}_{c,t} = \beta_1 \cdot \text{PreTrendAnnual}_{c,t} +
 
 where $\alpha_c$ are county fixed effects, $\lambda_t$ are month-year fixed effects, $\mathbf{X}_{c,t}$ is a vector of storm severity and resilience controls, and standard errors are two-way clustered at the county and month-year level.
 
-County fixed effects absorb time-invariant county characteristics — geography, long-run economic conditions, and local housing market features. Month-year fixed effects absorb common macroeconomic shocks including national interest rate movements and aggregate housing demand. The identifying variation is within-county, within-period deviation in storm severity and resilience.
+County fixed effects absorb time-invariant county characteristics - geography, long-run economic conditions, and local housing market features. Month-year fixed effects absorb common macroeconomic shocks including national interest rate movements and aggregate housing demand. 
 
 Our preferred specification (M5) augments the baseline with an interaction between log property damage and resilience quartile, testing whether the damage-to-price relationship differs across the resilience distribution.
 
@@ -128,12 +129,9 @@ fig_event_study
 
 Key observations:
 
-- Both high and low resilience counties show post-storm price appreciation 
-  relative to neighbor baseline 
-- Event type trajectories are broadly similar across categories, suggesting 
-  storm type alone does not drive recovery heterogeneity
-- Pre-storm deviations are non-zero, motivating `pre_trend_annual` as a 
-  control variable
+- Both high and low resilience counties show post-storm price appreciation relative to neighbor baseline 
+- Event type trajectories are broadly similar across categories, suggesting storm type alone does not drive recovery heterogeneity
+- Pre-storm deviations are non-zero, motivating `pre_trend_annual` as a control variable
 
 
 ## Regression Results
@@ -143,11 +141,11 @@ cat(readLines(here("paper", "output", "tables", "regression_table.tex")), sep="\
 ```
 Key findings:
 
-- Pre-storm trend is the strongest predictor of CIR across all specifications — mean reversion is robust ($\hat{\beta} = `r round(coef(model1)["pre_trend_annual"], 3)`$, $p < 0.001$)
+- Pre-storm trend is the strongest predictor of CIR across all specifications - mean reversion is robust ($\hat{\beta} = `r round(coef(model1)["pre_trend_annual"], 3)`$, $p < 0.001$)
 - Storm severity controls (event count, log damage) are not independently significant after absorbing county and time fixed effects
-- Resilience score is positively associated with CIR after controlling for storm severity (M3: $\hat{\beta} = `r round(coef(model3)["resl_score"], 3)`$, $p < 0.05$) — more resilient counties outperform their neighbors post-storm
-- Once damage is interacted with resilience (M4), log damage flips positive ($\hat{\beta} = `r round(coef(model4)["log_damage"], 3)`$) and the interaction is negative ($\hat{\beta} = `r round(coef(model4)["log_damage:resl_score"], 3)`$, $p < 0.05$) — resilience attenuates damage-driven appreciation
-- M5 reveals the mechanism is concentrated in Low resilience counties — damage drives anomalous appreciation relative to Middle ($\hat{\beta} = `r round(coef(model5)["log_damage:resl_quartileLow"], 3)`$, $p < 0.001$), while High quartile counties are statistically indistinguishable from Middle ($\hat{\beta} = `r round(coef(model5)["log_damage:resl_quartileHigh"], 3)`$, $p > 0.1$)
+- Resilience score is positively associated with CIR after controlling for storm severity (M3: $\hat{\beta} = `r round(coef(model3)["resl_score"], 3)`$, $p < 0.05$) - more resilient counties outperform their neighbors post-storm
+- Once damage is interacted with resilience (M4), log damage flips positive ($\hat{\beta} = `r round(coef(model4)["log_damage"], 3)`$) and the interaction is negative ($\hat{\beta} = `r round(coef(model4)["log_damage:resl_score"], 3)`$, $p < 0.05$)
+- M5 reveals the mechanism is concentrated in Low resilience counties - damage drives anomalous appreciation relative to Middle ($\hat{\beta} = `r round(coef(model5)["log_damage:resl_quartileLow"], 3)`$, $p < 0.001$), while High quartile counties are statistically indistinguishable from Middle ($\hat{\beta} = `r round(coef(model5)["log_damage:resl_quartileHigh"], 3)`$, $p > 0.1$)
 
 ## Local Projections
 
@@ -163,31 +161,25 @@ fig_lp_m5_interactions
 
 Key findings:
 
-- Placebo region (T-3 to T-1) is flat for all coefficients — supports identification assumption that damage effects are not pre-existing
-- Damage effect for Middle quartile counties turns negative post-storm and stabilizes by T+4 to T+5 — price depreciation is persistent within the observation window
-- Low resilience counties show consistently positive damage interaction throughout the post-storm window — anomalous appreciation relative to Middle emerges immediately at T+1 and persists
-- High resilience counties show a smaller, noisier positive interaction — statistically indistinguishable from Middle at most horizons
+- Placebo region (T-3 to T-1) is flat for all coefficients - supports identification assumption that damage effects are not pre-existing
+- Damage effect for Middle quartile counties turns negative post-storm and stabilizes by T+4 to T+5 - price depreciation is persistent within the observation window
+- Low resilience counties show consistently positive damage interaction throughout the post-storm window - anomalous appreciation relative to Middle emerges immediately at T+1 and persists
+- High resilience counties show a smaller, noisier positive interaction - statistically indistinguishable from Middle at most horizons
 - Effects appear largely baked in by T+5 to T+6, suggesting the housing market price response to storm damage is complete within approximately six months
   
 # Discussion
 
 ## Interpretation
 
-Our results support the hypothesis that community resilience is a meaningful predictor of post-storm housing market recovery. The effect is economically significant, statistically robust, and survives the inclusion of storm severity controls, hazard exposure, and two-way fixed effects that absorb a wide range of potential confounders.
-
-*To be completed.*
-
-## Interpretation
-
 Key findings and open questions for the team:
 
-- **Mean reversion dominates** — pre-storm trend is the strongest predictor of post-storm CIR across all specifications.
-- **Resilience matters but the mechanism is unclear** — high resilience counties outperform on average (M3), but the interaction results (M4, M5) suggest the channel runs through damage response rather than a direct resilience effect. The question is why.
-- **Low resilience counties show anomalous damage-driven appreciation** — why?
+- **Mean reversion dominates** - pre-storm trend is the strongest predictor of post-storm CIR across all specifications.
+- **Resilience matters but the mechanism is unclear** - high resilience counties outperform on average (M3), but the interaction results (M4, M5) suggest the channel runs through damage response rather than a direct resilience effect. Why?
+- **Low resilience counties show anomalous damage-driven appreciation** - why?
   - Supply shock?
   - Reconstruction?
   - Economic repercussions?
-- **Price appreciation everywhere in raw trajectories** — the unconditional event study plots show appreciation across all groups.
+- **Price appreciation everywhere in raw trajectories** - the unconditional event study plots show appreciation across all groups. 
 
 ## Future Work
 
@@ -203,10 +195,6 @@ fig_events_by_type
 
 ```{r fig-resl-dist, fig.cap=paste0("Distribution of FEMA NRI community resilience scores across storm-affected counties. Dashed line indicates the median resilience score of ", round(median_resl, 1), "."), fig.height=3.5}
 fig_resl_dist
-```
-
-```{r fig-resl-sovi, fig.cap="Relationship between community resilience and social vulnerability scores across storm-affected counties.", fig.height=4}
-fig_resl_sovi
 ```
 
 ```{r fig-lp-interaction, fig.cap="Dynamic effect of property damage x resilience on ZHVI deviation at each post-storm horizon.", fig.height=4.5}
