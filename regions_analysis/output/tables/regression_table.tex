@@ -1,0 +1,41 @@
+
+\begingroup
+\centering
+\begin{tabular}{lcccc}
+   \tabularnewline \midrule \midrule
+   Dependent Variable: & \multicolumn{4}{c}{Cumulative Impulse Response (CIR)}\\
+   Model:                        & (1)            & (2)            & (3)            & (4)\\  
+   \midrule
+   \emph{Variables}\\
+   Pre-Storm Trend (Annual)      & 0.7886$^{***}$ & 0.7920$^{***}$ & 0.7918$^{***}$ & 0.7924$^{***}$\\   
+                                 & (0.0052)       & (0.0052)       & (0.0052)       & (0.0052)\\   
+   Event Count                   & 0.0810$^{***}$ & 0.0770$^{***}$ & 0.0775$^{***}$ & 0.0756$^{**}$\\   
+                                 & (0.0298)       & (0.0298)       & (0.0298)       & (0.0300)\\   
+   Log Property Damage           & -0.0242        & -0.0284        & -0.0268        & -0.0234\\   
+                                 & (0.0541)       & (0.0537)       & (0.0536)       & (0.0536)\\   
+   Log Expected Annual Loss      &                & -1.794         & -1.048         & -0.7214\\   
+                                 &                & (1.415)        & (1.491)        & (1.482)\\   
+   Resilience Score              &                & 0.4101$^{***}$ & 0.3643$^{***}$ &   \\   
+                                 &                & (0.0324)       & (0.0380)       &   \\   
+   Social Vulnerability Score    &                &                & -0.0993$^{**}$ & -0.1201$^{***}$\\   
+                                 &                &                & (0.0389)       & (0.0387)\\   
+   High Resiliency (pctl >62\%)  &                &                &                & 18.21$^{***}$\\   
+                                 &                &                &                & (2.535)\\   
+   Low Resiliency (pctl <48\%)   &                &                &                & -1.547\\   
+                                 &                &                &                & (2.652)\\   
+   \midrule
+   \emph{Fixed-effects}\\
+   month\_year                   & Yes            & Yes            & Yes            & Yes\\  
+   stcofips                      & Yes            & Yes            & Yes            & Yes\\  
+   \midrule
+   \emph{Fit statistics}\\
+   Observations                  & 39,085         & 39,085         & 39,085         & 39,085\\  
+   R$^2$                         & 0.69033        & 0.69495        & 0.69513        & 0.69544\\  
+   Within R$^2$                  & 0.55437        & 0.56101        & 0.56128        & 0.56171\\  
+   \midrule \midrule
+   \multicolumn{5}{l}{\emph{Clustered (stcofips) standard-errors in parentheses}}\\
+   \multicolumn{5}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+\end{tabular}
+\par\endgroup
+
+
