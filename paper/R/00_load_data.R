@@ -54,7 +54,7 @@ monthly_dev <- read_csv(here::here("data/processed/monthly_deviations.csv")) |>
   # Join resilience score and climate region from main dataset
   left_join(
     df |> select(stcofips, year, month, resl_score, resl_quartile, 
-                 event_type, episode_id, evt_wind, evt_tornado, 
+                 event_type, episode_count, evt_wind, evt_tornado, 
                  evt_hail, evt_flood, evt_other),
     by = c("stcofips", "year", "month")
   )
