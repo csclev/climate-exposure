@@ -1,7 +1,4 @@
 # 01_eda.R
-# EDA figures and tables for report.Rmd
-# Requires: 00_load_data.R sourced first
-
 library(tidyverse)
 library(tigris)
 library(sf)
@@ -9,8 +6,11 @@ library(scales)
 
 options(tigris_use_cache = TRUE)
 
-# ---- 1. Distribution of Event Types ----
-fig_events_by_type <- df |>
+# Use mid tier as base for event counts to avoid triple-counting
+df_mid <- df |> filter(tier == "mid")
+
+# ---- 1. Storm Events by Year and Type ----
+fig_events_by_type <- df_mid |>
   pivot_longer(
     cols      = c(evt_wind, evt_tornado, evt_hail, evt_flood, evt_other),
     names_to  = "event_category",
@@ -29,63 +29,51 @@ fig_events_by_type <- df |>
   geom_col(position = "dodge") +
   scale_fill_brewer(palette = "Paired") +
   scale_y_continuous(labels = comma) +
-  labs(
-    title = "Storm Events by Year and Event Type",
-    x     = NULL,
-    y     = "County-Month Storm Observations",
-    fill  = "Event Type"
-  ) +
+  labs(title = "Storm Events by Year and Event Type", x = NULL,
+       y = "County-Month Storm Observations", fill = "Event Type") +
   theme_minimal() +
   theme(legend.position = "bottom")
 
-# ---- 2. Distribution of resl_value ----
-fig_resl_dist <- df |>
-  distinct(stcofips, resl_value) |>
-  ggplot(aes(x = resl_value)) +
-  geom_histogram(bins = 50, fill = "steelblue", color = "white", linewidth = 0.2) +
-  geom_vline(aes(xintercept = median(resl_value)), color = "firebrick",
-             linetype = "dashed", linewidth = 0.8) +
+# ---- 2. AUC Distribution by Tier ----
+fig_auc_by_tier <- df |>
+  ggplot(aes(x = auc, fill = tier)) +
+  geom_histogram(bins = 60, color = "white", linewidth = 0.2) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
+  facet_wrap(~ tier, ncol = 1, labeller = labeller(tier = c(
+    "mid"    = "Mid Tier (33rd-67th percentile)",
+    "bottom" = "Bottom Tier (0-33rd percentile)",
+    "top"    = "Top Tier (67th-100th percentile)"
+  ))) +
+  scale_fill_manual(values = c("mid" = "steelblue", "bottom" = "#d7191c", "top" = "#2c7bb6")) +
+  scale_x_continuous(labels = number_format(accuracy = 0.1)) +
   labs(
-    title    = "Distribution of Community Resilience Score (FEMA NRI)",
-    subtitle = "Dashed line = median",
-    x        = "Resilience Score (National Percentile)",
-    y        = "County Count"
-  ) +
-  theme_minimal()
-
-# ---- 3. Distribution of AUC ----
-fig_auc_dist <- df |>
-  ggplot(aes(x = auc)) +
-  geom_histogram(bins = 80, fill = "steelblue", color = "white", linewidth = 0.2) +
-  geom_vline(aes(xintercept = median(auc)), color = "firebrick",
-             linetype = "dashed", linewidth = 0.8) +
-  labs(
-    title    = "Distribution of Post-Storm CIR",
-    subtitle = "Cumulative 9-month ZHVI deviation from neighbor baseline. Dashed line = median.",
+    title    = "Distribution of Post-Storm CIR by Market Tier",
+    subtitle = "Cumulative 9-month ZHVI deviation from neighbor baseline. Dashed line = zero.",
     x        = "CIR (index points)",
     y        = "Event Count"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(legend.position = "none", panel.grid.minor = element_blank())
 
-# ---- 4. resl_value vs sovi_score correlation ----
-fig_resl_sovi <- df |>
-  distinct(stcofips, resl_value, sovi_score) |>
-  slice(1, .by = stcofips) |>
-  ggplot(aes(x = sovi_score, y = resl_value)) +
-  geom_point(alpha = 0.2, size = 0.8, color = "steelblue") +
-  geom_smooth(method = "lm", color = "firebrick", se = TRUE, linewidth = 0.8) +
+# ---- 3. Median AUC by Tier ----
+fig_auc_tier_box <- df |>
+  ggplot(aes(x = tier, y = auc, fill = tier)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.7, width = 0.5) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  coord_cartesian(ylim = quantile(df$auc, c(0.05, 0.95), na.rm = TRUE)) +
+  scale_fill_manual(values = c("mid" = "steelblue", "bottom" = "#d7191c", "top" = "#2c7bb6")) +
+  scale_x_discrete(labels = c("mid" = "Mid", "bottom" = "Bottom", "top" = "Top")) +
   labs(
-    title    = "Resilience Score vs. Social Vulnerability Score",
-    subtitle = sprintf("Pearson r = %.2f", cor(df$resl_value, df$sovi_score, use = "complete.obs")),
-    x        = "Social Vulnerability Score (National Percentile)",
-    y        = "Resilience Score (National Percentile)"
+    title    = "Post-Storm CIR by Market Tier",
+    subtitle = "Outliers trimmed to 5th-95th percentile. Dashed line = zero.",
+    x        = "Market Tier",
+    y        = "CIR (index points)"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(legend.position = "none")
 
-# ---- 5. County-level storm event heatmap (CONUS) ----
-
-# Aggregate total events per county
-county_events <- df |>
+# ---- 4. County-level storm heatmap ----
+county_events <- df_mid |>
   group_by(stcofips) |>
   summarise(total_events = sum(event_count), .groups = "drop") |>
   mutate(
@@ -93,24 +81,19 @@ county_events <- df |>
     county_fips = str_sub(stcofips, 3, 5)
   )
 
-# Load Census county shapefile — cached after first run
 counties_sf <- counties(cb = TRUE, resolution = "20m", year = 2021) |>
-  filter(!STATEFP %in% c("02", "15", "60", "66", "69", "72", "78")) |>  # drop non-CONUS
+  filter(!STATEFP %in% c("02", "15", "60", "66", "69", "72", "78")) |>
   left_join(county_events, by = c("STATEFP" = "state_fips", "COUNTYFP" = "county_fips"))
 
 fig_storm_heatmap <- ggplot(counties_sf) +
   geom_sf(aes(fill = total_events), color = NA) +
   scale_fill_viridis_c(
-    option    = "magma",
-    direction = -1,
-    na.value  = "grey90",
-    name      = "Storm Events",
-    labels    = comma,
-    trans     = "log1p",
-    breaks    = c(1, 5, 20, 100, 500)
+    option = "magma", direction = -1, na.value = "grey90",
+    name = "Storm Events", labels = comma, trans = "log1p",
+    breaks = c(1, 5, 20, 100, 500)
   ) +
   labs(
-    title = "County-Level Storm Event Exposure (2020-2025)",
+    title    = "County-Level Storm Event Exposure (2020-2025)",
     subtitle = "Total county-month storm observations. Counties in grey had no recorded events.",
     caption  = "Source: NOAA Storm Events Database"
   ) +
@@ -122,21 +105,14 @@ fig_storm_heatmap <- ggplot(counties_sf) +
     plot.subtitle    = element_text(size = 9, color = "grey40")
   )
 
-# Correlation of resilience and social vulnerability
-resl_sovi_cor <- round(cor(df$resl_value, df$sovi_score, use="complete.obs"), 2)
+# ---- Save ----
+ggsave(here::here("paper", "output", "figures", "fig_events_by_type.pdf"),
+       fig_events_by_type, width = 8, height = 5)
+ggsave(here::here("paper", "output", "figures", "fig_auc_by_tier.pdf"),
+       fig_auc_by_tier, width = 7, height = 7)
+ggsave(here::here("paper", "output", "figures", "fig_auc_tier_box.pdf"),
+       fig_auc_tier_box, width = 6, height = 5)
+ggsave(here::here("paper", "output", "figures", "fig_storm_heatmap.pdf"),
+       fig_storm_heatmap, width = 10, height = 6)
 
-# ---- Save all figures ----
-dir.create("./paper/output/figures", recursive = TRUE, showWarnings = FALSE)
-
-ggsave("./paper/output/figures/fig_events_by_type.pdf", fig_events_by_type,
-       width = 8, height = 5)
-ggsave("./paper/output/figures/fig_resl_dist.pdf",        fig_resl_dist,
-       width = 7, height = 4)
-ggsave("./paper/output/figures/fig_auc_dist.pdf",         fig_auc_dist,
-       width = 7, height = 4)
-ggsave("./paper/output/figures/fig_resl_sovi.pdf",        fig_resl_sovi,
-       width = 6, height = 5)
-ggsave("./paper/output/figures/fig_storm_heatmap.pdf",    fig_storm_heatmap,
-       width = 10, height = 6)
-
-cat("EDA figures saved to ./paper/output/figures/\n")
+cat("EDA figures saved\n")

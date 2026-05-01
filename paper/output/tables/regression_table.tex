@@ -1,39 +1,33 @@
 
 \begingroup
 \centering
-\begin{tabular}{lccccc}
+\begin{tabular}{lcccc}
    \tabularnewline \midrule \midrule
-   Dependent Variable: & \multicolumn{5}{c}{Cumulative Impulse Response (CIR)}\\
-   Model:                                                 & (1)             & (2)             & (3)             & (4)             & (5)\\  
+   Dependent Variable: & \multicolumn{4}{c}{Cumulative Impulse Response (CIR)}\\
+   Model:                   & (1)             & (2)             & (3)             & (4)\\  
    \midrule
    \emph{Variables}\\
-   Pre-Storm Trend (Annual)                               & -0.3442$^{***}$ & -0.3440$^{***}$ & -0.3440$^{***}$ & -0.3441$^{***}$ & -0.3441$^{***}$\\   
-                                                          & (0.0393)        & (0.0394)        & (0.0394)        & (0.0394)        & (0.0394)\\   
-   Log Property Damage                                    &                 & -0.0794         & -1.587          & -1.223          & -1.223\\   
-                                                          &                 & (0.1846)        & (2.145)         & (1.955)         & (1.962)\\   
-   NRI Risk Value (log)                                   &                 &                 & -0.5002         &                 &   \\   
-                                                          &                 &                 & (1.318)         &                 &   \\   
-   Log Property Damage $\times$ NRI Risk Value (log)      &                 &                 & 0.0932          &                 &   \\   
-                                                          &                 &                 & (0.1359)        &                 &   \\   
-   Log Expected Annual Loss                               &                 &                 &                 & -0.2482         & -0.2608\\   
-                                                          &                 &                 &                 & (1.227)         & (1.243)\\   
-   Log Property Damage $\times$ Log Expected Annual Loss  &                 &                 &                 & 0.0708          & 0.0709\\   
-                                                          &                 &                 &                 & (0.1253)        & (0.1259)\\   
-   Resilience Score                                       &                 &                 &                 &                 & 0.3333\\   
-                                                          &                 &                 &                 &                 & (4.172)\\   
-   Social Vulnerability                                   &                 &                 &                 &                 & 0.0033\\   
-                                                          &                 &                 &                 &                 & (0.0203)\\   
+   Pre-Storm Trend (Annual) & -0.3555$^{***}$ & -0.3555$^{***}$ & -0.3555$^{***}$ & -0.3554$^{***}$\\   
+                            & (0.0154)        & (0.0154)        & (0.0154)        & (0.0154)\\   
+   Bottom Tier              &                 & -0.3600$^{**}$  & -0.3600$^{**}$  & -0.3600$^{**}$\\   
+                            &                 & (0.1440)        & (0.1440)        & (0.1440)\\   
+   Top Tier                 &                 & -0.2038         & -0.2038         & -0.2038\\   
+                            &                 & (0.1226)        & (0.1226)        & (0.1226)\\   
+   Episode Count            &                 &                 & -0.0543         & -0.0729\\   
+                            &                 &                 & (0.1176)        & (0.1238)\\   
+   NRI Risk Value (log)     &                 &                 &                 & 0.0808\\   
+                            &                 &                 &                 & (0.1360)\\   
    \midrule
    \emph{Fixed-effects}\\
-   month\_year                                            & Yes             & Yes             & Yes             & Yes             & Yes\\  
+   month\_year              & Yes             & Yes             & Yes             & Yes\\  
    \midrule
    \emph{Fit statistics}\\
-   Observations                                           & 1,089           & 1,089           & 1,089           & 1,089           & 1,089\\  
-   R$^2$                                                  & 0.25769         & 0.25788         & 0.25988         & 0.25996         & 0.25999\\  
-   Within R$^2$                                           & 0.20435         & 0.20455         & 0.20669         & 0.20678         & 0.20681\\  
+   Observations             & 65,856          & 65,856          & 65,856          & 65,856\\  
+   R$^2$                    & 0.21490         & 0.21501         & 0.21502         & 0.21507\\  
+   Within R$^2$             & 0.20335         & 0.20346         & 0.20347         & 0.20352\\  
    \midrule \midrule
-   \multicolumn{6}{l}{\emph{Clustered (month\_year) standard-errors in parentheses}}\\
-   \multicolumn{6}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \multicolumn{5}{l}{\emph{Clustered (stcofips \& month\_year) standard-errors in parentheses}}\\
+   \multicolumn{5}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
 \end{tabular}
 \par\endgroup
 

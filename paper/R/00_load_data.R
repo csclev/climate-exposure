@@ -2,7 +2,7 @@ df <- read_csv(here::here("data/processed/analysis_dataset.csv"),
                col_types = cols(stcofips = col_character())) |>
   mutate(
     month_year    = factor(paste0(month, "_", year)),
-    tier          = factor(tier, levels = c("bottom", "mid", "top")),
+    tier          = factor(tier, levels = c("mid", "bottom", "top")),
     log_eal_valt  = log1p(eal_valt),
     log_risk_value = log1p(risk_value),
     resl_quartile = cut(
