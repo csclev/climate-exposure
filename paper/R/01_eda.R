@@ -38,12 +38,12 @@ fig_events_by_type <- df |>
   theme_minimal() +
   theme(legend.position = "bottom")
 
-# ---- 2. Distribution of resl_score ----
+# ---- 2. Distribution of resl_value ----
 fig_resl_dist <- df |>
-  distinct(stcofips, resl_score) |>
-  ggplot(aes(x = resl_score)) +
+  distinct(stcofips, resl_value) |>
+  ggplot(aes(x = resl_value)) +
   geom_histogram(bins = 50, fill = "steelblue", color = "white", linewidth = 0.2) +
-  geom_vline(aes(xintercept = median(resl_score)), color = "firebrick",
+  geom_vline(aes(xintercept = median(resl_value)), color = "firebrick",
              linetype = "dashed", linewidth = 0.8) +
   labs(
     title    = "Distribution of Community Resilience Score (FEMA NRI)",
@@ -67,16 +67,16 @@ fig_auc_dist <- df |>
   ) +
   theme_minimal()
 
-# ---- 4. resl_score vs sovi_score correlation ----
+# ---- 4. resl_value vs sovi_score correlation ----
 fig_resl_sovi <- df |>
-  distinct(stcofips, resl_score, sovi_score) |>
+  distinct(stcofips, resl_value, sovi_score) |>
   slice(1, .by = stcofips) |>
-  ggplot(aes(x = sovi_score, y = resl_score)) +
+  ggplot(aes(x = sovi_score, y = resl_value)) +
   geom_point(alpha = 0.2, size = 0.8, color = "steelblue") +
   geom_smooth(method = "lm", color = "firebrick", se = TRUE, linewidth = 0.8) +
   labs(
     title    = "Resilience Score vs. Social Vulnerability Score",
-    subtitle = sprintf("Pearson r = %.2f", cor(df$resl_score, df$sovi_score, use = "complete.obs")),
+    subtitle = sprintf("Pearson r = %.2f", cor(df$resl_value, df$sovi_score, use = "complete.obs")),
     x        = "Social Vulnerability Score (National Percentile)",
     y        = "Resilience Score (National Percentile)"
   ) +
@@ -123,7 +123,7 @@ fig_storm_heatmap <- ggplot(counties_sf) +
   )
 
 # Correlation of resilience and social vulnerability
-resl_sovi_cor <- round(cor(df$resl_score, df$sovi_score, use="complete.obs"), 2)
+resl_sovi_cor <- round(cor(df$resl_value, df$sovi_score, use="complete.obs"), 2)
 
 # ---- Save all figures ----
 dir.create("./paper/output/figures", recursive = TRUE, showWarnings = FALSE)

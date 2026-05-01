@@ -9,61 +9,51 @@ library(fixest)
 
 # M1: Baseline - pre-trend only
 model1 <- feols(
-  auc ~ pre_trend_annual | month_year + stcofips,
-  cluster = ~stcofips + month_year,
+  auc ~ pre_trend_annual | month_year,
+  cluster = ~month_year,
   data    = df
 )
 
-# M2: + Storm severity
+# M2: Storm severity
 model2 <- feols(
-  auc ~ pre_trend_annual + event_count + log_damage | month_year + stcofips,
-  cluster = ~stcofips + month_year,
+  auc ~ pre_trend_annual +
+  log_damage | month_year,
+  cluster = ~month_year,
   data    = df
 )
 
-
-# M3: + NRI components
+# M3: Event Type
 model3 <- feols(
-  auc ~ pre_trend_annual + event_count + log_damage +
-    resl_score | month_year + stcofips,
-  cluster = ~stcofips + month_year,
+  auc ~ pre_trend_annual +
+    log_damage + log_risk_value + log_damage*log_risk_value | month_year,
+  cluster = ~month_year,
   data    = df
 )
+  
 
-# M4: + Resilience x Damage
+# M4: + NRI Risk
 model4 <- feols(
-  auc ~ pre_trend_annual + event_count + log_damage +
-    resl_score + resl_score*log_damage | month_year + stcofips,
-  cluster = ~stcofips + month_year,
+  auc ~ pre_trend_annual +
+    log_damage + log_eal_valt + log_eal_valt*log_damage| month_year,
+  cluster = ~month_year,
   data    = df
 )
 
-# M5: + Resilience x Damage
+# M5: NRI components
 model5 <- feols(
-  auc ~ pre_trend_annual + event_count + log_damage +
-
-    resl_quartile + log_damage:resl_quartile | month_year + stcofips,
-  cluster = ~stcofips + month_year,
-  data = df
-)
-
-# M6: Storm Event Type
-model6 <- feols(
-  auc ~ pre_trend_annual + event_count + log_damage +
-  +evt_wind + evt_tornado + evt_hail + evt_flood | month_year + stcofips,
-  cluster = ~stcofips + month_year,
+  auc ~ pre_trend_annual +
+    log_damage + log_eal_valt + log_eal_valt*log_damage + resl_value + sovi_score | month_year,
+  cluster = ~month_year,
   data    = df
 )
-
-
 
 
 models <- list(
-  "M1: Baseline"     = model1,
-  "M2: + Severity"   = model2,
-  "M3: + Resilience"        = model3,
-  "M4: + Resilience x Damage"= model4,
-  "M5: + Quartile x Damage"= model5
+  "M1: Baseline" = model1,
+  "M2: Storm severity"  = model2,
+  "M3: Event Type" = model3,
+  "M4: NRI Risks" = model4,
+  "M5: NRI components"= model5
 )
 
 etable(
@@ -72,15 +62,16 @@ etable(
   file  = here::here("paper", "output", "tables","regression_table.tex"),
   dict  = c(
     pre_trend_annual       = "Pre-Storm Trend (Annual)",
-    event_count            = "Event Count",
+    episode_count            = "Episode Count",
     log_damage             = "Log Property Damage",
     log_eal_valt           = "Log Expected Annual Loss",
-    resl_score             = "Resilience Score",
+    log_risk_value         = "NRI Risk Value (log)",
+    resl_value             = "Resilience Score",
+    sovi_score             = "Social Vulnerability",
     evt_wind               = "Wind Event",
     evt_tornado            = "Tornado Event",
     evt_hail               = "Hail Event",
     evt_flood              = "Flood Event",
-    "resl_score:log_eal_valt" = "Resilience × Log EAL",
     auc                    = "Cumulative Impulse Response (CIR)",
     resl_quartileLow = "Resiliency Low (Q1)",
     resl_quartileHigh = "Resiliency High (Q4)"
