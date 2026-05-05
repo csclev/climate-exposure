@@ -172,11 +172,11 @@ county_resid_noFE <- df[obs(mB_noFE), ] %>%
   group_by(stcofips) %>%
   summarise(mean_resid = mean(.resid, na.rm = TRUE), .groups = "drop")
 # Force types match exactly
-county_resid$stcofips <- as.character(trimws(county_resid$stcofips))
+county_resid_noFE$stcofips <- as.character(trimws(county_resid$stcofips))
 counties_sf$GEOID     <- as.character(trimws(counties_sf$GEOID))
 
 natl_map_df <- counties_sf %>%
-  left_join(county_resid, by = c("GEOID" = "stcofips"))
+  left_join(county_resid_noFE, by = c("GEOID" = "stcofips"))
 
 hedonic_residual_national_map <- ggplot(natl_map_df) +
   geom_sf(aes(fill = mean_resid), color = NA) +
