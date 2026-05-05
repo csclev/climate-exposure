@@ -5,3 +5,16 @@ __pycache__
 .Rproj.user
 .positai
 *.pkl
+# Generated data
+data/processed/
+*.pkl
+*.csv
+
+# Generated paper outputs
+paper/output/
+paper/paper/
+paper/report.pdf
+paper/*.pdf
+
+# Virtual documents
+.virtual_documents/
