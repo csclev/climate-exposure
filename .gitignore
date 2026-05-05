@@ -4,13 +4,10 @@ __pycache__
 .ipynb_checkpoints
 .Rproj.user
 .positai
-*.pkl
-# Generated data
-data/processed/
-*.pkl
-*.csv
 
 # Generated paper outputs
+*.pkl
+data/processed/
 paper/output/
 paper/paper/
 paper/report.pdf
