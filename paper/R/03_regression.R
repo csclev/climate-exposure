@@ -18,14 +18,14 @@ model2 <- feols(
 
 # "M3: + Episode"
 model3 <- feols(
-  auc ~ pre_trend_annual + tier + episode_count | month_year,
+  auc ~ pre_trend_annual + tier + episode_count + log_damage | month_year,
   cluster = ~stcofips + month_year,
   data    = df
 )
 
 # "M4: + NRI"
 model4 <- feols(
-  auc ~ pre_trend_annual + tier + episode_count + log_risk_value | month_year,
+  auc ~ pre_trend_annual + tier + episode_count + log_damage  + log_risk_value | month_year,
   cluster = ~stcofips + month_year,
   data    = df
 )
