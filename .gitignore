@@ -3,3 +3,10 @@ __pycache__
 .DS_Store
 .ipynb_checkpoints
 .Rproj.user
+*.pkl
+data/processed/
+paper/output/
+paper/paper/
+paper/report.pdf
+paper/*.pdf
+.virtual_documents/
