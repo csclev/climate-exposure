@@ -77,21 +77,36 @@ class TiersPipeline():
                 print(f'Warning ({name}): {missing:,} rows missing baseline_zhvi')
             else:
                 print(f'{name}: All baseline ZHVI present')
-
-        self.export_baseline(baseline_lookup_mid,    dataset_path, 'mid')
-        self.export_baseline(baseline_lookup_top,    dataset_path, 'top')
-        self.export_baseline(baseline_lookup_bottom, dataset_path, 'bottom')
+        self.export_baseline(baseline_lookup_mid, dataset_path, 'mid', zhvi_idx_mid)
+        self.export_baseline(baseline_lookup_top, dataset_path, 'top', zhvi_idx_top)
+        self.export_baseline(baseline_lookup_bottom, dataset_path, 'bottom', zhvi_idx_bottom)
 
         return dataset_path
 
-    def export_baseline(self, baseline_lookup, dataset_path, suff):
+    def export_baseline(self, baseline_lookup, dataset_path, suff, zhvi_idx):
         baseline_lookup.to_pickle(dataset_path / f"baseline_lookup_{suff}.pkl")
         
         event_neighbors = (
             baseline_lookup
             .drop_duplicates(['target_fips', 'storm_year', 'storm_month'])
             [['target_fips', 'storm_year', 'storm_month', 'n_clean_neighbors', 'neighbor_fips']]
+            .copy()
         )
+        
+        # Target ZHVI at T=0
+        event_neighbors['target_zhvi_t0'] = event_neighbors.apply(
+            lambda r: zhvi_idx.get((r['target_fips'], r['storm_year'], r['storm_month'])), axis=1
+        )
+        
+        # Mean baseline ZHVI at T=0
+        def mean_neighbor_zhvi(row):
+            fips_list = [f.strip() for f in row['neighbor_fips'].split(',')]
+            vals = [zhvi_idx.get((f, row['storm_year'], row['storm_month'])) for f in fips_list]
+            vals = [v for v in vals if v is not None and not pd.isna(v)]
+            return np.mean(vals) if vals else np.nan
+        
+        event_neighbors['baseline_mean_zhvi_t0'] = event_neighbors.apply(mean_neighbor_zhvi, axis=1)
+        
         event_neighbors.to_csv(dataset_path / f"event_neighbors_{suff}.csv", index=False)
         
         print(f"Saved baseline_lookup_{suff}.pkl")
@@ -184,6 +199,8 @@ class TiersPipeline():
                     for (_, yr, mo) in window
                 ):
                     complete_neighbors.append(n)
+
+            complete_neighbors = list(set(complete_neighbors))
 
             n_clean = len(complete_neighbors)
             if n_clean < min_neighbors:
