@@ -3,10 +3,15 @@ __pycache__
 .DS_Store
 .ipynb_checkpoints
 .Rproj.user
+.positai
+
+# Generated paper outputs
 *.pkl
 data/processed/
 paper/output/
 paper/paper/
 paper/report.pdf
 paper/*.pdf
+
+# Virtual documents
 .virtual_documents/

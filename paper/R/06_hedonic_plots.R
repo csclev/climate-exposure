@@ -11,6 +11,12 @@ library(dplyr)
 library(tigris)
 library(sf)
 library(binsreg)
+library(tigris)
+library(sf)
+
+options(tigris_use_cache = TRUE)
+
+dir.create(here::here("paper", "output", "hedonic"), recursive = TRUE, showWarnings = FALSE)
 
 # Coefficient Plot (horizontal forest)
 # Pull coefficients and SEs from fixest object directly
@@ -82,7 +88,7 @@ income_comparison_plot <- ggplot(coef_compare, aes(x = estimate, y = term, color
   theme_minimal()
 
 # Urban/Ruralness ruled out
-rucc_summary <- df %>%
+rucc_summary <- hed_df %>%
   distinct(stcofips, .keep_all = TRUE) %>%
   group_by(rucc_2023) %>%
   summarise(
@@ -118,15 +124,15 @@ urban_rural_plot <- ggplot(rucc_summary, aes(x = rucc_2023, y = indexed, color =
 
 # Scatter/Partial-residual plot (binned)
 # Residualize ZHVI and EAL on controls + FE
-df$zhvi_resid <- residuals(feols(log_zhvi ~ log_income + log_pop_density + coastal | state + month_id, data = df))
-df$eal_resid  <- residuals(feols(log_eal  ~ log_income + log_pop_density + coastal | state + month_id, data = df))
+hed_df$zhvi_resid <- residuals(feols(log_zhvi ~ log_income + log_pop_density + coastal | state + month_id, data = hed_df))
+hed_df$eal_resid  <- residuals(feols(log_eal  ~ log_income + log_pop_density + coastal | state + month_id, data = hed_df))
 
-partial_residual_bins_plot <- binsreg(y = df$zhvi_resid, x = df$eal_resid, nbins = 30, line = c(3, 3))
+partial_residual_bins_plot <- binsreg(y = hed_df$zhvi_resid, x = hed_df$eal_resid, nbins = 30, line = c(3, 3))
 
 # Map of Residuals
 # State Map
 # Pull observations that fixest actually used (handles dropped rows)
-df_used <- df[obs(mB), ]   # if this errors, df is already aligned to mB
+df_used <- hed_df[obs(mB), ]   # if this errors, df is already aligned to mB
 
 df_used$.resid <- residuals(mB)
 
@@ -140,6 +146,9 @@ county_resid <- df_used %>%
   filter(n_obs >= 12)  # require at least a year of obs for a stable mean
 
 # Force types match exactly
+counties_sf <- counties(cb = TRUE, resolution = "20m", year = 2021) |>
+  filter(!STATEFP %in% c("02", "15", "60", "66", "69", "72", "78"))
+
 county_resid$stcofips <- as.character(trimws(county_resid$stcofips))
 counties_sf$GEOID     <- as.character(trimws(counties_sf$GEOID))
 
@@ -164,10 +173,10 @@ hedonic_residual_state_map <- ggplot(map_df) +
 mB_noFE <- feols(
   log_zhvi ~ log_eal + resl_value_z + sovi_score_z +
     log_income + log_pop_density + coastal | month_id,
-  data = df, cluster = ~ stcofips
+  data = hed_df, cluster = ~ stcofips
 )
 
-county_resid_noFE <- df[obs(mB_noFE), ] %>%
+county_resid_noFE <- hed_df[obs(mB_noFE), ] %>%
   mutate(.resid = residuals(mB_noFE)) %>%
   group_by(stcofips) %>%
   summarise(mean_resid = mean(.resid, na.rm = TRUE), .groups = "drop")
@@ -193,16 +202,16 @@ hedonic_residual_national_map <- ggplot(natl_map_df) +
   theme_void()
 
 # ---- Save figures ----
-ggsave("./paper/output/figures/hedonic_coefficient_plot.pdf",     coefficient_plot,
+ggsave(here::here("paper", "output", "hedonic", "hedonic_coefficient_plot.pdf"),     coefficient_plot,
        width = 8, height = 5)
-ggsave("./paper/output/figures/hedonic_income_comparison.pdf", income_comparison_plot,
+ggsave(here::here("paper", "output", "hedonic", "hedonic_income_comparison.pdf"), income_comparison_plot,
        width = 8, height = 5)
-ggsave("./paper/output/figures/hedonic_urban_rural.pdf", urban_rural_plot,
+ggsave(here::here("paper", "output", "hedonic", "hedonic_urban_rural.pdf"), urban_rural_plot,
        width = 10, height = 7)
-ggsave("./paper/output/figures/hedonic_residual_bins.pdf", partial_residual_bins_plot$bins_plot,
+ggsave(here::here("paper", "output", "hedonic", "hedonic_residual_bins.pdf"), partial_residual_bins_plot$bins_plot,
        width = 8, height = 5)
-ggsave("./paper/output/figures/hedonic_residual_state_map.pdf", hedonic_residual_state_map,
+ggsave(here::here("paper", "output", "hedonic", "hedonic_residual_state_map.pdf"), hedonic_residual_state_map,
        width = 10, height = 7)
-ggsave("./paper/output/figures/hedonic_residual_national_map.pdf", hedonic_residual_national_map,
+ggsave(here::here("paper", "output", "hedonic", "hedonic_residual_national_map.pdf"), hedonic_residual_national_map,
        width = 10, height = 7)
 cat("Event study figures saved to ./paper/output/figures/\n")
