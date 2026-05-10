@@ -16,8 +16,8 @@ run_lp <- function(baselines, output_dir) {
   
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   
-  PRE  <- 3
-  POST <- 9
+  PRE  <- PRE_EVENT_MONTHS
+  POST <- POST_EVENT_MONTHS
   horizons <- c(-PRE:-1, 1:POST)
   x_breaks <- c(-PRE:-1, 0, 1:POST)
   x_labels <- c(paste0("T", -PRE:-1), "T0", paste0("T+", 1:POST))

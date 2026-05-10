@@ -1,6 +1,14 @@
 # theme.R
 # Shared visual constants for all charts
 
+# Event months
+PRE_EVENT_MONTHS  <- 3
+POST_EVENT_MONTHS <- 9
+
+BASELINE_LEVEL1_PATH   <- paste0("data/processed/nlevel1_nmin1_pre", PRE_EVENT_MONTHS, "_post", POST_EVENT_MONTHS)
+BASELINE_LEVEL2_PATH   <- paste0("data/processed/nlevel2_nmin2_pre", PRE_EVENT_MONTHS, "_post", POST_EVENT_MONTHS)
+BASELINE_REGIONAL_PATH <- paste0("data/processed/nlevelr_nmin2_pre", PRE_EVENT_MONTHS, "_post", POST_EVENT_MONTHS)
+
 library(ggplot2)
 
 # ---- Color palettes ----

@@ -38,10 +38,6 @@ zhvi_eda  <- run_zhvi_eda(here::here("paper", "output", "zhvi"))
 ss <- storm_eda$summary_stats
 storms_raw <- storm_eda$storms
 
-# Event months
-PRE_EVENT_MONTHS  <- 3
-POST_EVENT_MONTHS <- 9
-
 # Storm stats
 n_county_months   <- format(ss$total_county_months, big.mark = ",")
 n_events          <- format(ss$total_events, big.mark = ",")
@@ -193,18 +189,19 @@ We summarize the post-storm trajectory as the Cumulative Impulse Response (CIR):
 #| output: false
 #| results: hide
 #| message: false
+source(here::here("paper", "R", "theme.R"))
 source(here::here("paper", "R", "load_data.R"))
 source(here::here("paper", "R", "balance.R"))
 
 baselines <- list(
-  level1   = load_baseline("data/processed/nlevel1_nmin1_pre3_post9", "Adjacent (L1)"),
-  level2   = load_baseline("data/processed/nlevel2_nmin2_pre3_post9", "Second Ring (L2)"),
-  regional = load_baseline("data/processed/nlevelr_nmin2_pre3_post9", "Regional")
+  level1   = load_baseline(BASELINE_LEVEL1_PATH, "Adjacent (L1)"),
+  level2   = load_baseline(BASELINE_LEVEL2_PATH, "Second Ring (L2)"),
+  regional = load_baseline(BASELINE_REGIONAL_PATH, "Regional")
 )
 
-baselines$level1$path   <- "data/processed/nlevel1_nmin1_pre3_post9"
-baselines$level2$path   <- "data/processed/nlevel2_nmin2_pre3_post9"
-baselines$regional$path <- "data/processed/nlevelr_nmin2_pre3_post9"
+baselines$level1$path   <- BASELINE_LEVEL1_PATH
+baselines$level2$path   <- BASELINE_LEVEL2_PATH
+baselines$regional$path <- BASELINE_REGIONAL_PATH
 
 storms <- read_csv(here::here("data", "processed", "storm_events.csv"),
                    col_types = cols(stcofips = col_character()),
