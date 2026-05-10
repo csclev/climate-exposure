@@ -23,9 +23,20 @@ load_baseline <- function(path, baseline_name) {
   hed <- read_csv(here::here("data", "processed", "hedonic_dataset.csv"),
                   col_types = cols(stcofips = col_character()),
                   show_col_types = FALSE) |>
-    distinct(stcofips, coastal)
+    group_by(stcofips) |>
+    slice(1) |>
+    ungroup() |>
+    select(stcofips, coastal, pop_density) |>
+    mutate(log_pop_density = log1p(pop_density))
   
-  df <- df |> left_join(hed, by = "stcofips")
+  acs <- readRDS(here::here("data", "processed", "acs_controls.rds")) |>
+    mutate(stcofips = as.character(stcofips)) |>
+    select(stcofips, median_hh_income) |>
+    mutate(log_income = log(median_hh_income))
+  
+  df <- df |>
+    left_join(hed, by = "stcofips") |>
+    left_join(acs, by = "stcofips")
   
   monthly_dev <- read_csv(file.path(path, "monthly_deviations.csv"),
                           show_col_types = FALSE) |>

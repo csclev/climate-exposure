@@ -167,14 +167,11 @@ knitr::include_graphics(here::here("paper", "output", "hedonic", "hedonic_coeffi
 
 For each county-month storm event, we measure the county's ZHVI trajectory relative to a counterfactual baseline of unaffected counties. Both the target county and each baseline county are indexed to 100 at the storm month (T=0), so deviations represent percentage-point changes in relative performance rather than dollar differences.
 
-The monthly deviation at horizon $n$ is:
-$$\delta_{c,t+n} = Z_{c,t+n} - B_{c,t+n}$$
+The monthly deviation at horizon $n$ is: $$\delta_{c,t+n} = Z_{c,t+n} - B_{c,t+n}$$
 
 where $Z$ is the target county's indexed ZHVI and $B$ is the mean indexed ZHVI of the baseline counties. A positive deviation means the storm-affected county outperformed its baseline; negative means underperformance.
 
-We summarize the post-storm trajectory as the Cumulative Impulse Response (CIR):
-$$\text{CIR}_{c,t} = \sum_{n=1}^{9} \delta_{c,t+n}​$$
-and measure the pre-storm trend as the annualized average deviation over `r PRE_EVENT_MONTHS`months prior to the event.
+We summarize the post-storm trajectory as the Cumulative Impulse Response (CIR): $$\text{CIR}_{c,t} = \sum_{n=1}^{9} \delta_{c,t+n}​$$ and measure the pre-storm trend as the annualized average deviation over `r PRE_EVENT_MONTHS`months prior to the event.
 
 ## Sample Construction
 
@@ -190,7 +187,7 @@ and measure the pre-storm trend as the annualized average deviation over `r PRE_
 
 - For tier analysis: only events with all three tiers present are retained
 
-**Attrition:**
+**Attrition and Covariate Balance:**
 
 ```{r setup-balance}
 #| output: false
@@ -228,18 +225,6 @@ pct_survival_l2       <- round(att$covered_events[att$baseline == "Second Ring (
 pct_survival_regional <- round(att$covered_events[att$baseline == "Regional"] / att$total_storms[1] * 100, 1)
 ```
 
-**Covariate balance:**
-
-For each baseline method, compare target counties vs their actual baseline counties on:
-
-- ZHVI at T=0 (raw level)
-
-- Median household income (ACS)
-
-- NRI resilience value
-
-- NRI expected annual loss
-
 ```{r tbl-balance-summary}
 #| output: false
 #| results: hide
@@ -268,9 +253,9 @@ read_csv(here::here("paper", "output", "balance", "balance_summary.csv"),
   kableExtra::add_header_above(c(" " = 2, "ZHVI (log)" = 2, "Income ($)" = 2, "Resilience" = 2, "EAL (log)" = 2))
 ```
 
-Three counterfactual baselines are constructed from counties on an equal-weighted mean of ZHVI. Baseline counties must have 0 reported NOAA storm events in the pre and post storm timeframe to create an unaffected index.
+Three counterfactual baselines are constructed from neighboring counties on an equal-weighted mean of ZHVI. Baseline counties must have 0 reported NOAA storm events in the pre and post storm timeframe to create an unaffected index.
 
-Adjacent (L1) neighboring counties are the group of counties physically connected to the target county. This would represent the closes counterfactual to the storm-affected county, but it absorbs the highest level of spillover effect. L1 represents `r n_events_l1` events across `r n_counties_l1` counties, `r pct_survival_l1`% survival rate.
+Adjacent (L1) neighboring counties are the group of counties physically connected to the target county. This would represent the closest counterfactual to the storm-affected county, but it absorbs the highest level of spillover effect. L1 represents `r n_events_l1` events across `r n_counties_l1` counties, `r pct_survival_l1`% survival rate.
 
 Second Ring (L2) counties are the adjacent neighbors of the L1 counties, exclusive of any L1 counties. These are isolated from the target county by 1 neighbor, so the physical separation reduces the spillover effect at the cost of greater heterogeneity from the target. L2 represents `r n_events_l2` events across `r n_counties_l2` counties, `r pct_survival_l2`% survival rate.
 
@@ -310,9 +295,9 @@ pre_t1_dev <- round(pre_storm_check$mean_dev[pre_storm_check$month_t == -1], 3)
 es$fig_es_mid
 ```
 
-All three baselines show post-storm appreciation relative to baseline counties across all tiers. The magnitude of measured deviation depends on baseline choice. L1 consistently shows the smallest deviation, consistent with spillover contamination of adjacent baselines. L2 and Regional show larger deviations, with L2 sitting between the two as expected from its intermediate geographic scope.
+All three baselines show post-storm appreciation relative to baseline counties across all tiers. The magnitude of measured deviation depends on baseline choice. L1 consistently shows the smallest deviation, consistent with spillover contamination of adjacent counties. L2 and Regional show larger deviations. Regional and L2 baselines diverge significantly from zero by T+4 (95% CI).
 
-No baseline method produces a statistically significant divergence from zero after accounting for confidence intervals. Pre-storm deviations at T-1 are marginally significant on L2 mid tier (deviation = `r pre_t1_dev`, p = `r pre_t1_p`), with T-2 borderline (p = `r pre_t2_p`) and T-3 not significant (p = `r pre_t3_p`). The direction is negative as target counties slightly underperform their baseline pre-storm — consistent with mean reversion rather than a parallel trends violation.
+Pre-storm deviations at T-1 are marginally significant on L2 mid tier (deviation = `r pre_t1_dev`, p = `r pre_t1_p`), with T-2 borderline (p = `r pre_t2_p`) and T-3 not significant (p = `r pre_t3_p`). The direction is negative as target counties slightly underperform their baseline pre-storm — consistent with mean reversion rather than a parallel trends violation.
 
 ## Regression
 
@@ -326,12 +311,12 @@ reg <- run_regression(baselines, here::here("paper", "output", "regression"))
 # ---- Regression inline values ----
 # Buildup (L2 mid)
 m1_coefs <- coef(reg$models_buildup[["M1: Baseline"]])
-m5_coefs <- coef(reg$models_buildup[["M4: + Components"]])
+m5_coefs <- coef(reg$models_buildup[["M5: + Components"]])
 m1_r2w <- round(as.numeric(fitstat(reg$models_buildup[["M1: Baseline"]], "wr2")), 3)
 m5_r2w <- round(as.numeric(fitstat(reg$models_buildup[[length(reg$models_buildup)]], "wr2")), 3)
 
 pre_trend_coef    <- round(m1_coefs["pre_trend_annual"], 2)
-coastal_coef      <- round(m5_coefs["coastal"], 2)
+coastal_coef      <- round(m5_coefs["coastal"], 3)
 coastal_se        <- round(se(reg$models_buildup[[length(reg$models_buildup)]])["coastal"], 3)
 
 # Baseline sensitivity
@@ -342,7 +327,7 @@ pre_trend_l1       <- round(coef(bs[["Adjacent (L1)"]])["pre_trend_annual"], 2)
 coastal_l2         <- round(coef(bs[["Second Ring (L2)"]])["coastal"], 2)
 coastal_regional   <- round(coef(bs[["Regional"]])["coastal"], 2)
 coastal_l1         <- round(coef(bs[["Adjacent (L1)"]])["coastal"], 2)
-sovi_l1            <- round(coef(bs[["Adjacent (L1)"]])["sovi_score"], 3)
+risk_l1            <- round(coef(bs[["Adjacent (L1)"]])["log_risk_value"], 3)
 n_obs_l1           <- nobs(bs[["Adjacent (L1)"]])
 r2w_regional <- round(as.numeric(fitstat(bs[["Regional"]], "wr2")) * 100, 1)
 r2w_l2       <- round(as.numeric(fitstat(bs[["Second Ring (L2)"]], "wr2")) * 100, 1)
@@ -372,17 +357,15 @@ writeLines(readLines(here::here("paper", "output", "regression", "table_buildup.
 
 ### **Model Buildup (Mid Tier, L2)**
 
-Pre-storm trend is the only significant predictor across all specifications (`r pre_trend_coef`). Coastal becomes significant in the full specification (`r coastal_coef`), separating
-the specific effect of coastal location from NRI counterparts. Log damage, episode count, NRI risk value, EAL, resilience, and social vulnerability are all insignificant. Within R² is essentially flat
-from M1 to M5 (`r m1_r2w*100`% to `r m5_r2w*100`%) — storm and NRI variables add negligible explanatory power beyond pre-trend. The pre-trend coefficient implies strong mean reversion - counties underperforming before the storm outperform after, regardless of storm characteristics.
+Pre-storm trend is the only significant predictor across all specifications (`r pre_trend_coef`). Coastal becomes significant in the full specification (`r coastal_coef`), separating the specific effect of coastal location from NRI counterparts. Log damage, log income, log population density, NRI risk value, expected annual loss, resilience, and social vulnerability are all insignificant. Within R² is essentially flat from M1 to M5 (`r m1_r2w*100`% to `r m5_r2w*100`%) storm and NRI variables add negligible explanatory power beyond pre-trend. The pre-trend coefficient implies strong mean reversion. Counties underperforming before the storm outperform after, regardless of storm characteristics.
 
 ### **Baseline Sensitivity (Mid Tier, Preferred Spec)**
 
-Pre-trend coefficient varies by baseline: Regional (`r pre_trend_regional`) \> L2 (`r pre_trend_l2`) \> L1 (`r pre_trend_l1`), all significant at 1%. Coastal is significant only on L2 (`r coastal_l2`\*\*). Regional shows same direction (`r coastal_regional`) but wider SE. L1 shows no effect (`r coastal_l1`). Social vulnerability is significant on L1 only (`r sovi_l1`\*\*\*) with N=`r format(n_obs_l1, big.mark=",")`. Within R² ranges from `r r2w_l1`% (L1) to `r r2w_regional`% (Regional). No other variable reaches significance on any baseline. The null result on NRI expected annual loss, resiliency, and social vulnerability is robust to different baseline choices.
+Pre-trend coefficient varies by baseline: Regional (`r pre_trend_regional`) \> L2 (`r pre_trend_l2`) \> L1 (`r pre_trend_l1`), all significant at 1%. Coastal is significant only on L2 (`r coastal_l2`\*\*). Regional shows same direction (`r coastal_regional`) but wider SE. L1 shows no effect (`r coastal_l1`). NRI Risk Value approaches significance on L1 only (`r risk_l1`\*) with N=`r format(n_obs_l1, big.mark=",")`. Within R² ranges from `r r2w_l1`% (L1) to `r r2w_regional`% (Regional). No other variable reaches significance on any baseline. The null result on NRI risk value is robust to baseline choices.
 
 ### **Tier Comparison (L2, Preferred Spec)**
 
-Pre-trend significant and similar across all tiers (`r pre_trend_top` to `r pre_trend_mid`\*\*\*). Coastal significant on bottom (`r coastal_bottom`\*) and mid (`r coastal_mid`\*\*), not top (`r coastal_top`). Log damage significant on bottom tier only (`r damage_bottom`\*). Damage is associated with price depreciation in the lowest market segment. EAL marginally significant and positive on top tier only (`r eal_top`\*). Other NRI variables (resl_value, sovi_score) are insignificant and nearly identical across all three tiers. NRI does not capture tier-specific vulnerability. Within R² is highest on bottom tier (`r r2w_bottom`%) and lowest on top (`r r2w_top`%). Storm characteristics explain slightly more variance in financially vulnerable markets.
+Pre-trend significant and similar across all tiers (`r pre_trend_top` to `r pre_trend_mid`\*\*\*). Coastal significant on mid (`r coastal_mid`\*\*), but not bottom (`r coastal_bottom`\*) or top (`r coastal_top`). Log damage approaches significance on bottom tier only (`r damage_bottom`\*). Damage is associated with price depreciation in the lowest market segment. NRI risk coefficient varies across tiers, the null effect is robust across market segments. NRI does not capture tier-specific vulnerability. Within R² is highest on bottom tier (`r r2w_bottom`%) and lowest on top (`r r2w_top`%). Storm characteristics explain slightly more variance in financially vulnerable markets.
 
 ## Local Projections
 
@@ -426,7 +409,35 @@ Placebo region (T-3 to T-1) is flat for all tiers (maximum absolute coefficient 
 
 The dominant signal across all analysis is pre-existing momentum, not storm effects. The absolute trend is positive, but when we control for the pre-event trend, the coefficients is actually negative. L2 is the preferred baseline because it buffers spillover without introducing regional heterogeneity. However with so many events and factors that cross county boundaries, there is no one correct version of a baseline for comparison. Selecting an appropriate baseline is a balance of decontaminating the spillover and accurately capturing the local dynamics.
 
-Bottom tier is uniquely damage-sensitive severely damaged homes would fall into the bottom tier from mid and top. It is also the most financially constrained market where forced sales, deferred repairs, and underinsurance are most likely to appear. Coastal penalty is strongest on bottom and mid, absent on top. Top market tier exhibits economic stability against storm events as amenity value protects high-end coastal property. Expected loss going positive after coastal control is a possible rebuild effect or a sign of stronger capitalization. These tier differences are economically meaningful even if marginally significant
+Bottom tier is uniquely damage-sensitive severely damaged homes would fall into the bottom tier from mid and top. It is also the most financially constrained market where forced sales, deferred repairs, and underinsurance are most likely to appear. Coastal penalty is strongest on bottom and mid, absent on top. Top market tier exhibits economic stability against storm events as amenity value protects high-end coastal property. Expected loss going positive after coastal control is a possible rebuild effect or a sign of stronger capitalization. These tier differences are economically meaningful even if marginally significant.
+
+```{r setup-attribution}
+#| output: false
+#| results: hide
+#| message: false
+source(here::here("paper", "R", "attribution.R"))
+attrib <- run_attribution(baselines, reg, here::here("paper", "output", "regression"))
+
+ts <- attrib$tier_stats
+fmt_n_counties    <- format(attrib$n_study_counties, big.mark = ",")
+fmt_mean_units    <- format(round(attrib$mean_units), big.mark = ",")
+fmt_market_cap_t  <- format(round(attrib$total_market_cap / 1e12, 1))
+fmt_zhvi_bottom   <- format(round(ts$median_zhvi_t0[1]), big.mark = ",")
+fmt_zhvi_mid      <- format(round(ts$median_zhvi_t0[2]), big.mark = ",")
+fmt_zhvi_top      <- format(round(ts$median_zhvi_t0[3]), big.mark = ",")
+fmt_cir_bottom    <- round(ts$median_cir[1], 2)
+fmt_cir_mid       <- round(ts$median_cir[2], 2)
+fmt_cir_top       <- round(ts$median_cir[3], 2)
+fmt_total_cir_b   <- format(round(attrib$study_dollar_cir / 1e9, 1))
+fmt_pretrend_b    <- format(round(attrib$study_dollar_pretrend / 1e9, 1))
+fmt_residual_b    <- format(round(attrib$study_dollar_residual / 1e9, 1))
+```
+
+Across `r fmt_n_counties` storm-affected counties with a mean of `r fmt_mean_units` housing units per county, total estimated housing exposure is approximately \$`r fmt_market_cap_t`T (median ZHVI of \$`r fmt_zhvi_bottom` bottom, \$`r fmt_zhvi_mid` mid, \$`r fmt_zhvi_top` top). The raw CIR median of `r fmt_cir_bottom` (bottom), `r fmt_cir_mid` (mid), and `r fmt_cir_top` (top) index points implies \$`r fmt_total_cir_b`B in aggregate apparent market movement across the study. Of this, \$`r fmt_pretrend_b`B is explained by pre-existing price momentum via the tier-specific pre-trend coefficients. The remaining \$`r fmt_residual_b`B is unexplained residual variance, encompassing measurement noise, idiosyncratic county factors, and any undetected storm effects. The regression cannot attribute this residual to storm events with statistical confidence.
+
+```{r fig-attribution, fig.cap="Estimated market impact decomposition by tier. Grey = pre-trend momentum. Red = unexplained residual."}
+attrib$fig_attribution
+```
 
 NRI variables are insignificant as predictors of post-storm CIR. The model has sufficient sample to detect other effects (coastal, damage), so we believe these are genuine null results. Coastal status, which is partially contained within NRI through BRIC physical resilience, is independently significant when separated. The composite obscures rather than enhances the signal.The null result is robust to baseline choice, tier selection, and model specification
 
@@ -521,5 +532,3 @@ writeLines(readLines(here::here("paper", "output", "regression", "table_baseline
 #| tbl-cap: "Tier Comparison: Second Ring (L2) Baseline, Full NRI Specification"
 writeLines(readLines(here::here("paper", "output", "regression", "table_tier_comparison.tex")))
 ```
-
-### 

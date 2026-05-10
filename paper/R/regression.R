@@ -17,6 +17,8 @@ run_regression <- function(baselines, output_dir) {
   dict <- c(
     pre_trend_annual = "Pre-Storm Trend (Annual)",
     coastal          = "Coastal",
+    log_income       = "Log Income",
+    log_pop_density  = "Log Population Density",
     log_damage       = "Log Property Damage",
     episode_count    = "Episode Count",
     log_risk_value   = "Log NRI Risk Value",
@@ -32,23 +34,29 @@ run_regression <- function(baselines, output_dir) {
   m1 <- feols(auc ~ pre_trend_annual | month_year,
               cluster = ~stcofips + month_year, data = df_l2_mid)
   
-  m2 <- feols(auc ~ pre_trend_annual + coastal + log_damage + episode_count | month_year,
+  m2 <- feols(auc ~ pre_trend_annual + coastal + log_income + log_pop_density | month_year,
               cluster = ~stcofips + month_year, data = df_l2_mid)
   
-  m3 <- feols(auc ~ pre_trend_annual + coastal + log_damage + episode_count +
-                log_risk_value | month_year,
+  m3 <- feols(auc ~ pre_trend_annual + coastal + log_income + log_pop_density
+              + log_damage | month_year,
+              cluster = ~stcofips + month_year, data = df_l2_mid)
+
+  m4 <- feols(auc ~ pre_trend_annual + coastal + log_income + log_pop_density
+              + log_damage + log_risk_value | month_year,
               cluster = ~stcofips + month_year, data = df_l2_mid)
   
-  m4 <- feols(auc ~ pre_trend_annual + coastal + log_damage + episode_count +
-                log_eal_valt + resl_value + sovi_score | month_year,
+  m5 <- feols(auc ~ pre_trend_annual + coastal + log_income + log_pop_density
+              + log_damage
+              + log_eal_valt + resl_value + sovi_score  | month_year,
               cluster = ~stcofips + month_year, data = df_l2_mid)
 
   
   models_buildup <- list(
     "M1: Baseline"     = m1,
-    "M2: + Storm"      = m2,
-    "M3: + Risk"       = m3,
-    "M4: + Components" = m4
+    "M2: + Demographics" = m2,
+    "M3: + Storm"      = m3,
+    "M4: + Risk"       = m4,
+    "M5: + Components" = m5
   )
   
   etable(models_buildup, tex = TRUE, dict = dict,
@@ -62,8 +70,8 @@ run_regression <- function(baselines, output_dir) {
     df_mid <- bl$df |> filter(tier == "mid")
     
     baseline_models[[bl$baseline]] <- feols(
-      auc ~ pre_trend_annual + coastal + log_damage + episode_count +
-        log_eal_valt + resl_value + sovi_score | month_year,
+      auc ~ pre_trend_annual + coastal + log_income + log_pop_density
+      + log_damage + log_risk_value | month_year,
       cluster = ~stcofips + month_year,
       data    = df_mid
     )
@@ -89,8 +97,8 @@ run_regression <- function(baselines, output_dir) {
     )
     
     tier_models[[tier_label]] <- feols(
-      auc ~ pre_trend_annual + coastal + log_damage + episode_count +
-        log_eal_valt + resl_value + sovi_score | month_year,
+      auc ~ pre_trend_annual + coastal + log_income + log_pop_density
+      + log_damage + log_risk_value | month_year,
       cluster = ~stcofips + month_year,
       data    = df_tier
     )

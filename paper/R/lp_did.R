@@ -33,11 +33,12 @@ run_lp <- function(baselines, output_dir) {
     bl$monthly_dev |>
       filter(month_t != 0) |>
       left_join(
-        bl$df |> select(stcofips, year, month, tier, log_damage, episode_count,
-                        pre_trend_annual, month_year, coastal),
+        bl$df |> select(stcofips, year, month, tier, log_damage,
+                        pre_trend_annual, month_year, coastal,
+                        log_income, log_pop_density, log_risk_value),
         by = c("stcofips", "year", "month", "tier")
       ) |>
-      filter(!is.na(pre_trend_annual))
+      filter(!is.na(pre_trend_annual), !is.na(log_income), !is.na(log_pop_density))
   }
   
   # ---- Helper: run LP loop ----
@@ -47,14 +48,18 @@ run_lp <- function(baselines, output_dir) {
       data_h <- data |> filter(month_t == h)
       model <- tryCatch({
         feols(
-          deviation ~ log_damage + episode_count + pre_trend_annual + coastal | month_year,
+          deviation ~ pre_trend_annual + coastal + log_income +
+            log_pop_density + log_damage + log_risk_value | month_year,
           cluster = ~stcofips + month_year,
           data    = data_h
         )
-      }, error = function(e) NULL)
+      }, error = function(e) {
+        cat(sprintf("  LP failed at h=%d: %s\n", h, e$message))
+        NULL
+      })
       if (!is.null(model)) {
         results[[as.character(h)]] <- broom::tidy(model, conf.int = TRUE) |>
-          mutate(horizon = h, n_obs = nobs(model))
+          mutate(horizon = h)
       }
     }
     bind_rows(results)
