@@ -153,7 +153,7 @@ rucc <- read_excel(rucc_file, sheet = 1) %>%
     # metro_nonmetro = ifelse(rucc_2023 <= 3, "metro", "nonmetro") make binary
   )
 
-df <- df %>% inner_join(rucc, by = "stcofips")
+hed <- hed %>% inner_join(rucc, by = "stcofips")
 ```
 
 
@@ -220,7 +220,8 @@ df %>%
 We run three specifications side by side. All use **state + month fixed effects** with
 standard errors clustered at the county level.
 
-- **Spec A (parsimonious, NRI's intended decomposition):** ZHVI ~ log(EAL) + log(CRF)
+- **Spec A.1 (controls):** ZHVI ~ income + pop + coastal
+- **Spec A.2 (parsimonious, NRI's intended decomposition):** ZHVI ~ log(EAL) + log(CRF)
 - **Spec B (separates resilience from social vulnerability):** ZHVI ~ log(EAL) + resilience + SoVI
 - **Spec C (Spec B + regime interaction):** allow SoVI coefficient to differ pre/post March 2023
 - **Spec D (Spec B - Sovi):** check if resilience multicollinearity with sovi impacts coefficient
@@ -233,7 +234,11 @@ standard errors clustered at the county level.
 ctrls <- "log_income + log_pop_density + coastal"
 fe    <- "state + month_id"
 
-spec_A <- as.formula(paste(
+spec_A1 <- as.formula(paste(
+  "log_zhvi ~ ", ctrls, "|", fe
+))
+
+spec_A2 <- as.formula(paste(
   "log_zhvi ~ log_eal + log_crf +", ctrls, "|", fe
 ))
 
@@ -267,14 +272,15 @@ spec_F <- as.formula(paste(
 ```
 
 ```{r fit}
-mA <- feols(spec_A, data = df, cluster = ~ stcofips)
+mA1 <- feols(spec_A1, data = df, cluster = ~ stcofips)
+mA2 <- feols(spec_A2, data = df, cluster = ~ stcofips)
 mB <- feols(spec_B, data = df, cluster = ~ stcofips)
 mC <- feols(spec_C, data = df, cluster = ~ stcofips)
 mD <- feols(spec_D, data = df, cluster = ~ stcofips)
 mE <- feols(spec_E, data = df, cluster = ~ stcofips)
 mF <- feols(spec_F, data = df, cluster = ~ stcofips)
 
-etable(mA, mB, mC, mD, mE, mF, 
+etable(mA1, mA2, mB, mC, mD, mE, mF, 
        title = "Hedonic regression: log(ZHVI) on NRI components and controls",
        digits  = 3,
        fitstat = c("n", "r2", "war2"))
