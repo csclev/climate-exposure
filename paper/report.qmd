@@ -38,10 +38,6 @@ zhvi_eda  <- run_zhvi_eda(here::here("paper", "output", "zhvi"))
 ss <- storm_eda$summary_stats
 storms_raw <- storm_eda$storms
 
-# Event months
-PRE_EVENT_MONTHS  <- 3
-POST_EVENT_MONTHS <- 9
-
 # Storm stats
 n_county_months   <- format(ss$total_county_months, big.mark = ",")
 n_events          <- format(ss$total_events, big.mark = ",")
@@ -77,15 +73,21 @@ n_hedonic_obs <- format(nrow(hed), big.mark = ",")
 n_hedonic_counties <- format(n_distinct(hed$stcofips), big.mark = ",")
 ```
 
+# **Abstract**
+
+\[TBD\]
+
+\newpage
+
 # **Introduction**
 
 ## Motivation
 
-Extreme weather costs have doubled - \$149.3B annual average 2020-2024 vs \$64.8B 1980-2020 (Smith 2025). Insured losses \~\$100B annually, yet market pricing remains inconsistent (Coren 2024, Parshley 2023). Prior research documents a gap between climate risk and housing valuation-some markets discount risk, others overvalue amenity (Baldauf 2020, Bernstein 2019, Bakkensen 2017).
+Extreme weather events, including storms, floods, fires, tornadoes are becoming increasingly frequent, severe, and financially destabilizing. This volatility surged from 2020-2024, when inflation-adjusted annual costs for U.S. billion-dollar disasters averaged \$149.3B, more than doubling the \$64.8B average from 1980-2020 (Smith 2025). Despite insured losses reaching \~\$100B annually, markets have been slow to adapt (Coren 2024, Parshley 2023). 
 
-This study asks: **when storms actually hit, does ZHVI respond in a measurable way, and does community resilience moderate that response?**
+FEMA's National Risk Index (NRI) is a composite metric created to determine the relative risk to 18 climatological hazards for all areas of the United States. We test whether real estate markets incorporate any of the risk factors into pricing.
 
-We use three publicly available datasets (NOAA, Zillow, FEMA NRI) to construct a county-level event study.
+We stress test the hedonic findings with a natural experiment developed using NOAA storm data to understand how real estate markets respond post-hazard event and whether FEMA's expected annual loss, social vulnerability, and resiliency scores correlate with heterogeneous outcomes.
 
 ## Prior Research
 
@@ -97,25 +99,25 @@ When risk is realized through extreme weather, delinquency rates rise and valuat
 
 Prior work focuses on cross-sectional pricing (is risk priced at a point in time?) or post-hoc portfolio adjustment. This study examines the dynamic response. What happens to housing values in the months following a storm event, measured against a local counterfactual baseline? FEMA NRI provides a standardized measure of community resilience that we test as a moderator of post-storm recovery. We also examine whether baseline construction methodology affects the detectability of the effect
 
-## Research Questions
-
-- Do storm events create measurable deviations in county-level housing values as measured by Zillow ZHVI relative to unaffected neighbors?
-
-- Does FEMA NRI community resilience moderate the magnitude or duration of post-storm deviations?
-
-- Does the effect differ across market segments (bottom, mid, top tier ZHVI)?
-
-- How sensitive are measured effects to baseline construction methodology?
-
-## Methodological Framework
-
-Local Projections Difference-in-Differences (Dube, Girardi, Jordà, Taylor 2025) provides the framework for measuring dynamic treatment effects of discrete shocks. LP-DiD estimates a response curve across post-treatment periods, capturing both the magnitude and duration of a shock's effect. This is well-suited to storm events where the housing market response may be immediate, delayed, or cumulative.
-
-We simplify the LP-DiD approach by pre-computing the Cumulative Impulse Response (CIR): the sum of monthly deviations across the post-storm window. CIR captures both severity and persistence in a single quantity. A county with a small but prolonged deviation scores similarly to one with a large but brief deviation. The tradeoff: collapsing the time dimension loses information about when effects materialize and how quickly they dissipate. We complement CIR with horizon-specific local projections that preserve the temporal dynamics
-
-LP-DiD requires a counterfactual: what would have happened absent the storm? We construct this from unaffected neighbor counties, indexed to 100 at the storm month. With high level of spillover in weather events, baseline construction methodology materially affects the measured CIR, motivating our comparison of three baseline approaches.
-
 # **Data**
+
+## **Community Risk and Resilience (FEMA NRI)**
+
+We use the FEMA National Risk Index (NRI), a county-level composite of hazard exposure, social vulnerability, and community resilience published in four vintages (2020, 2021, 2023, 2025). The NRI covers `r n_nri_counties` counties. The NRI risk score is the product of Expected Annual Loss (EAL) and the Community Risk Factor (CRF), a ratio of Social Vulnerability to Community Resilience. Higher social vulnerability or lower resilience amplifies the base loss exposure. The CRF captures the community's capacity to absorb and recover from that loss.
+
+$$\text{National Risk Index} = \text{Expected Annual Loss} \times \underbrace{\frac{\text{Social Vulnerability}}{\text{Community Resilience}}}_{\text{CRF}}$$
+
+We match each storm observation to the most recent available NRI vintage using a forward-fill rule, and smooth NRI values on a monthly basis between vintage release dates to avoid discrete jumps at vintage boundaries.
+
+FEMA revised its NRI methodology between the 2021 and 2023 releases, shifting from a relative index to an absolute dollar-based measure. This is a potential source of measurement discontinuity for events near the 2022 transition.
+
+## **Housing Market (Zillow ZHVI)**
+
+We use the Zillow Home Value Index (ZHVI), a repeat-sales index of monthly county-level median home values for single-family residences and condominiums. ZHVI reflects estimated market values rather than transaction prices, and is seasonally adjusted. We use the smoothed series across three market tiers: bottom (0–33rd percentile), mid (33rd–67th percentile), and top (67th–100th percentile). Coverage spans approximately `r n_zhvi_counties` counties from `r zhvi_date_min` to `r zhvi_date_max`. The three tiers allow us to examine whether storm effects vary across the price distribution, for example, whether lower-value housing is disproportionately affected. As of January 2023, median ZHVI is \$`r median_zhvi_bottom` (bottom), \$`r median_zhvi_mid` (mid), and \$`r median_zhvi_top` (top).
+
+```{r fig-tier-dist, fig.cap="ZHVI distribution by market tier as of January 2023. Dashed lines indicate tier medians."}
+knitr::include_graphics(here::here("paper", "output", "zhvi", "fig_tier_dist.pdf"))
+```
 
 ## **Storm Events (NOAA)**
 
@@ -127,54 +129,103 @@ Our sample covers `r n_county_months` county-month storm observations across `r 
 knitr::include_graphics(here::here("paper", "output", "storms", "fig_storm_heatmap.pdf"))
 ```
 
-## **Housing Market (Zillow ZHVI)**
-
-We use the Zillow Home Value Index (ZHVI), a repeat-sales index of monthly county-level median home values for single-family residences and condominiums. ZHVI reflects estimated market values rather than transaction prices, and is seasonally adjusted. We use the smoothed series across three market tiers: bottom (0–33rd percentile), mid (33rd–67th percentile), and top (67th–100th percentile). Coverage spans approximately `r n_zhvi_counties` counties from `r zhvi_date_min` to `r zhvi_date_max`. The three tiers allow us to examine whether storm effects vary across the price distribution, for example, whether lower-value housing is disproportionately affected. As of January 2023, median ZHVI is \$`r median_zhvi_bottom` (bottom), \$`r median_zhvi_mid` (mid), and \$`r median_zhvi_top` (top).
-
-```{r fig-tier-dist, fig.cap="ZHVI distribution by market tier as of January 2023. Dashed lines indicate tier medians."}
-knitr::include_graphics(here::here("paper", "output", "zhvi", "fig_tier_dist.pdf"))
-```
-
-## **Community Risk and Resilience (FEMA NRI)**
-
-We use the FEMA National Risk Index (NRI), a county-level composite of hazard exposure, social vulnerability, and community resilience published in four vintages (2020, 2021, 2023, 2025). The NRI covers `r n_nri_counties` counties across vintages `r nri_vintages`. Key variables include expected annual loss (`eal_valt`), composite risk value (`risk_value`), community resilience (`resl_value`), and social vulnerability (`sovi_score`). We match each storm observation to the most recent available NRI vintage using a forward-fill rule, and smooth NRI values on a monthly basis between vintage release dates to avoid discrete jumps at vintage boundaries.
-
-FEMA revised its NRI methodology between the 2021 and 2023 releases, shifting from a relative index to an absolute dollar-based measure. This is a potential source of measurement discontinuity for events near the 2022 transition.
-
-## Hedonic Regression
-
-```{r fig-hedonic-coef, fig.cap="Hedonic regression coefficients on log(ZHVI). County-month panel with state and month fixed effects."}
-knitr::include_graphics(here::here("paper", "output", "hedonic", "hedonic_coefficient_plot.pdf"))
-```
-
-- The cross-sectional relationship between NRI variables and housing values is documented in the hedonic regression analysis, which establishes that climate risk and resilience are reflected in ZHVI levels conditional on income, population density, and coastal status.
-
-- The hedonic regression operates on a county-month panel of approximately `r n_hedonic_obs` observations.
-
-- Resilience is statistically significant but explains a small fraction of ZHVI variation relative to income.
-
-- The hedonic analysis is presented as descriptive EDA establishing that NRI variables are correlated with housing values cross-sectionally, not as causal estimates
-
 ## **Supplementary Data**
 
 **American Community Survey (ACS).** County-level median household income from the 2019–2023 five-year ACS, accessed via `tidycensus`. Used in the hedonic regression and covariate balance analysis.
 
 **County Adjacency File (Census Bureau).** County-to-county adjacency relationships used to construct the level-1 (adjacent) and level-2 (second ring) neighbor baselines.
 
-# **Study Design**
+# Research Questions and Framework
 
-## **Event Study Framework**
+## Questions
+
+- What factors make up the raw Zillow ZHVI level for a county?
+
+- Do housing markets reflect FEMA NRI risk metrics - expected loss, resiliency, social vulnerability?
+
+- Do storm events create measurable deviations in county-level housing values as measured by Zillow ZHVI relative to unaffected neighbors?
+
+- Does FEMA NRI community resilience moderate the magnitude or duration of post-storm deviations?
+
+- Does the effect differ across market segments (bottom, mid, top tier ZHVI)?
+
+- How sensitive are measured effects to baseline construction methodology?
+
+## Methodological Framework
+
+We use a 2 phase approach to understand how real estate market pricing relative to economic, demographic, and climate considerations.
+
+First we estimate a hedonic model of Zillow ZHVI based on underlying factors at the county level.
+
+Second, we stress test the model using a natural experiment with NOAA storm events. When a county is hit by a storm, we would expect market to respond based on severity and damages, while unaffected counties should not have a market response. We estimate a full response curve to storm damages over the 9 months following a storm event.
+
+Local Projections Difference-in-Differences (Dube, Girardi, Jordà, Taylor 2025) provides the framework for measuring dynamic treatment effects of discrete shocks. LP-DiD estimates a response curve across post-treatment periods, capturing both the magnitude and duration of a shock's effect. This is well-suited to storm events where the housing market response may be immediate, delayed, or cumulative.
+
+We simplify the LP-DiD approach by pre-computing the Cumulative Impulse Response (CIR): the sum of monthly deviations across the post-storm window. CIR captures both severity and persistence in a single quantity. A county with a small but prolonged deviation scores similarly to one with a large but brief deviation. The tradeoff: collapsing the time dimension loses information about when effects materialize and how quickly they dissipate. We complement CIR with horizon-specific local projections that preserve the temporal dynamics specific to damage response.
+
+This approach requires a counterfactual: what would have happened absent the storm? Storm events are likely to have high rates of spillover across country boundaries that are not recorded in the NOAA data set. The frequency and geographic reach of spillover are unknown quantities. Adjacent neighboring counties would be relatively equivalent comparable for baseline analysis, but the spillover effect will also be highest for neighboring counties. We consider a baseline sensitivity analysis to understand the spillover of storm events.
+
+# ZHVI Hedonic Analysis
+
+Descriptive cross-county hedonic regression of Zillow Home Value Index (ZHVI) on FEMA National Risk Index (NRI) components, controlling for ACS demographics and state + month fixed effects. The goal is to document whether higher climate risk and lower community resilience are associated with lower property values, conditional on observables.
+
+This is a **descriptive correlation**, not a causal estimate. Coastal amenity confounds the risk signal at the county level even with the controls included here. The event study (notebook `05`) is the complementary causal analysis.
+
+## County-level data
+
+We need county-level controls that the NRI components don't already capture:
+
+- **Median household income** - dollars per year, log transformed
+- **Population Density -** people per square mile, log transformed (check)
+- **Coastal County Status** - account for coastal amenity and/or risk
+
+Considered but left off due to overlap with community resilience and social vulnerability calculations: - **Share with bachelor's degree+** - human capital, picks up labor market quality - **Share owner-occupied** - tenure mix shifts price dynamics - **Median age** - lifecycle/retiree composition, related to migration patterns - **Median year structure built** - housing stock vintage, captures durability
+
+We deliberately do *not* pull poverty, vehicle access, household size, or disability share - those are inputs to the CDC SVI and would create multicollinearity with `sovi_score`.
+
+## Specification
+
+We run 5 specifications side by side. All use **state + month fixed effects** with standard errors clustered at the county level.
+
+- **Spec A (controls):** ZHVI \~ log(income) + log(pop_density) + coastal
+- **Spec B (parsimonious, NRI's intended decomposition):** ZHVI \~ log(EAL) + log(CRF)
+- **Spec C (separates resilience from social vulnerability):** ZHVI \~ log(EAL) + resilience + SoVI
+- **Spec D (Spec B + regime interaction):** allow SoVI coefficient to differ pre/post March 2023
+- **Spec E (Spec B + urban-rural continuum):** see if resilience coefficient changes when urban/ruralness accounted for
+
+```{r tbl-hedonic}
+#| results: 'asis'
+#| tbl-cap: "Hedonic regression specifications A, B, C, D, E"
+writeLines(readLines(here::here("paper", "output", "regression", "table_hedonic.tex")))
+```
+
+```{r load-hedonic-inline}
+#| results: hide
+hed <- readRDS(here::here("paper", "output", "regression", "hedonic_inline.rds"))
+list2env(hed, envir = .GlobalEnv)
+```
+
+## Results
+
+The hedonic regression operates on a county-month panel of approximately `r n_hedonic_obs` observations.
+
+Specification A: income, population density, and coastal status are all significant controls. Income is positive with the largest coefficient which drives a large share of the raw ZHVI value, which would be expected. A 1% change in median income results in `r hed_income_coef`% change in ZHVI (p \< 0.01). Housing markets are more than proportionally sensitive to differences in income that compound.
+
+Specification B and C: We add the NRI controls with expected annual loss (log) and the community risk factor - both in its combined form and decomposed into resiliency and social vulnerability scores. CRF is not significant in spec B, but the individual components are each significant in spec C. The proportionate ratio of resiliency to social vulnerability in CRF obscures the relationship to housing market valuation.
+
+Specification D: the methodological regime attenuates the social vulnerability coefficient from `r hed_sovi_coef_C` to `r hed_sovi_base_D`, but does not meaningfully change coefficients of any other feature.
+
+# **Event Study Design**
+
+## **Framework**
 
 For each county-month storm event, we measure the county's ZHVI trajectory relative to a counterfactual baseline of unaffected counties. Both the target county and each baseline county are indexed to 100 at the storm month (T=0), so deviations represent percentage-point changes in relative performance rather than dollar differences.
 
-The monthly deviation at horizon $n$ is:
-$$\delta_{c,t+n} = Z_{c,t+n} - B_{c,t+n}$$
+The monthly deviation at horizon $n$ is: $$\delta_{c,t+n} = Z_{c,t+n} - B_{c,t+n}$$
 
 where $Z$ is the target county's indexed ZHVI and $B$ is the mean indexed ZHVI of the baseline counties. A positive deviation means the storm-affected county outperformed its baseline; negative means underperformance.
 
-We summarize the post-storm trajectory as the Cumulative Impulse Response (CIR):
-$$\text{CIR}_{c,t} = \sum_{n=1}^{9} \delta_{c,t+n}​$$
-and measure the pre-storm trend as the annualized average deviation over `r PRE_EVENT_MONTHS`months prior to the event.
+We summarize the post-storm trajectory as the Cumulative Impulse Response (CIR): $$\text{CIR}_{c,t} = \sum_{n=1}^{9} \delta_{c,t+n}​$$ and measure the pre-storm trend as the annualized average deviation over `r PRE_EVENT_MONTHS`months prior to the event.
 
 ## Sample Construction
 
@@ -190,24 +241,25 @@ and measure the pre-storm trend as the annualized average deviation over `r PRE_
 
 - For tier analysis: only events with all three tiers present are retained
 
-**Attrition:**
+**Attrition and Covariate Balance:**
 
 ```{r setup-balance}
 #| output: false
 #| results: hide
 #| message: false
+source(here::here("paper", "R", "theme.R"))
 source(here::here("paper", "R", "load_data.R"))
 source(here::here("paper", "R", "balance.R"))
 
 baselines <- list(
-  level1   = load_baseline("data/processed/nlevel1_nmin1_pre3_post9", "Adjacent (L1)"),
-  level2   = load_baseline("data/processed/nlevel2_nmin2_pre3_post9", "Second Ring (L2)"),
-  regional = load_baseline("data/processed/nlevelr_nmin2_pre3_post9", "Regional")
+  level1   = load_baseline(BASELINE_LEVEL1_PATH, "Adjacent (L1)"),
+  level2   = load_baseline(BASELINE_LEVEL2_PATH, "Second Ring (L2)"),
+  regional = load_baseline(BASELINE_REGIONAL_PATH, "Regional")
 )
 
-baselines$level1$path   <- "data/processed/nlevel1_nmin1_pre3_post9"
-baselines$level2$path   <- "data/processed/nlevel2_nmin2_pre3_post9"
-baselines$regional$path <- "data/processed/nlevelr_nmin2_pre3_post9"
+baselines$level1$path   <- BASELINE_LEVEL1_PATH
+baselines$level2$path   <- BASELINE_LEVEL2_PATH
+baselines$regional$path <- BASELINE_REGIONAL_PATH
 
 storms <- read_csv(here::here("data", "processed", "storm_events.csv"),
                    col_types = cols(stcofips = col_character()),
@@ -227,18 +279,6 @@ pct_survival_l1       <- round(att$covered_events[att$baseline == "Adjacent (L1)
 pct_survival_l2       <- round(att$covered_events[att$baseline == "Second Ring (L2)"] / att$total_storms[1] * 100, 1)
 pct_survival_regional <- round(att$covered_events[att$baseline == "Regional"] / att$total_storms[1] * 100, 1)
 ```
-
-**Covariate balance:**
-
-For each baseline method, compare target counties vs their actual baseline counties on:
-
-- ZHVI at T=0 (raw level)
-
-- Median household income (ACS)
-
-- NRI resilience value
-
-- NRI expected annual loss
 
 ```{r tbl-balance-summary}
 #| output: false
@@ -268,9 +308,9 @@ read_csv(here::here("paper", "output", "balance", "balance_summary.csv"),
   kableExtra::add_header_above(c(" " = 2, "ZHVI (log)" = 2, "Income ($)" = 2, "Resilience" = 2, "EAL (log)" = 2))
 ```
 
-Three counterfactual baselines are constructed from counties on an equal-weighted mean of ZHVI. Baseline counties must have 0 reported NOAA storm events in the pre and post storm timeframe to create an unaffected index.
+Three counterfactual baselines are constructed from neighboring counties on an equal-weighted mean of ZHVI. Baseline counties must have 0 reported NOAA storm events in the pre and post storm timeframe to create an unaffected index.
 
-Adjacent (L1) neighboring counties are the group of counties physically connected to the target county. This would represent the closes counterfactual to the storm-affected county, but it absorbs the highest level of spillover effect. L1 represents `r n_events_l1` events across `r n_counties_l1` counties, `r pct_survival_l1`% survival rate.
+Adjacent (L1) neighboring counties are the group of counties physically connected to the target county. This would represent the closest counterfactual to the storm-affected county, but it absorbs the highest level of spillover effect. L1 represents `r n_events_l1` events across `r n_counties_l1` counties, `r pct_survival_l1`% survival rate.
 
 Second Ring (L2) counties are the adjacent neighbors of the L1 counties, exclusive of any L1 counties. These are isolated from the target county by 1 neighbor, so the physical separation reduces the spillover effect at the cost of greater heterogeneity from the target. L2 represents `r n_events_l2` events across `r n_counties_l2` counties, `r pct_survival_l2`% survival rate.
 
@@ -278,9 +318,9 @@ Regional baseline is constructed from all counties in the local climatologial re
 
 L2 and regional baselines must have at least 2 unaffected counties. Adjacent baseline may have 1 or more unaffected counties.
 
-# **Results**
+# **Event Study Results**
 
-## Event Study Trajectories
+## Trajectories
 
 ```{r setup-es}
 #| output: false
@@ -310,9 +350,9 @@ pre_t1_dev <- round(pre_storm_check$mean_dev[pre_storm_check$month_t == -1], 3)
 es$fig_es_mid
 ```
 
-All three baselines show post-storm appreciation relative to baseline counties across all tiers. The magnitude of measured deviation depends on baseline choice. L1 consistently shows the smallest deviation, consistent with spillover contamination of adjacent baselines. L2 and Regional show larger deviations, with L2 sitting between the two as expected from its intermediate geographic scope.
+All three baselines show post-storm appreciation relative to baseline counties across all tiers. The magnitude of measured deviation depends on baseline choice. L1 consistently shows the smallest deviation, consistent with spillover contamination of adjacent counties. L2 and Regional show larger deviations. Regional and L2 baselines diverge significantly from zero by T+4 (95% CI).
 
-No baseline method produces a statistically significant divergence from zero after accounting for confidence intervals. Pre-storm deviations at T-1 are marginally significant on L2 mid tier (deviation = `r pre_t1_dev`, p = `r pre_t1_p`), with T-2 borderline (p = `r pre_t2_p`) and T-3 not significant (p = `r pre_t3_p`). The direction is negative as target counties slightly underperform their baseline pre-storm — consistent with mean reversion rather than a parallel trends violation.
+Pre-storm deviations at T-1 are marginally significant on L2 mid tier (deviation = `r pre_t1_dev`, p = `r pre_t1_p`), with T-2 borderline (p = `r pre_t2_p`) and T-3 not significant (p = `r pre_t3_p`). The direction is negative as target counties slightly underperform their baseline pre-storm — consistent with mean reversion rather than a parallel trends violation.
 
 ## Regression
 
@@ -326,12 +366,12 @@ reg <- run_regression(baselines, here::here("paper", "output", "regression"))
 # ---- Regression inline values ----
 # Buildup (L2 mid)
 m1_coefs <- coef(reg$models_buildup[["M1: Baseline"]])
-m5_coefs <- coef(reg$models_buildup[["M4: + Components"]])
+m5_coefs <- coef(reg$models_buildup[["M5: + Components"]])
 m1_r2w <- round(as.numeric(fitstat(reg$models_buildup[["M1: Baseline"]], "wr2")), 3)
 m5_r2w <- round(as.numeric(fitstat(reg$models_buildup[[length(reg$models_buildup)]], "wr2")), 3)
 
 pre_trend_coef    <- round(m1_coefs["pre_trend_annual"], 2)
-coastal_coef      <- round(m5_coefs["coastal"], 2)
+coastal_coef      <- round(m5_coefs["coastal"], 3)
 coastal_se        <- round(se(reg$models_buildup[[length(reg$models_buildup)]])["coastal"], 3)
 
 # Baseline sensitivity
@@ -342,7 +382,7 @@ pre_trend_l1       <- round(coef(bs[["Adjacent (L1)"]])["pre_trend_annual"], 2)
 coastal_l2         <- round(coef(bs[["Second Ring (L2)"]])["coastal"], 2)
 coastal_regional   <- round(coef(bs[["Regional"]])["coastal"], 2)
 coastal_l1         <- round(coef(bs[["Adjacent (L1)"]])["coastal"], 2)
-sovi_l1            <- round(coef(bs[["Adjacent (L1)"]])["sovi_score"], 3)
+risk_l1            <- round(coef(bs[["Adjacent (L1)"]])["log_risk_value"], 3)
 n_obs_l1           <- nobs(bs[["Adjacent (L1)"]])
 r2w_regional <- round(as.numeric(fitstat(bs[["Regional"]], "wr2")) * 100, 1)
 r2w_l2       <- round(as.numeric(fitstat(bs[["Second Ring (L2)"]], "wr2")) * 100, 1)
@@ -372,19 +412,17 @@ writeLines(readLines(here::here("paper", "output", "regression", "table_buildup.
 
 ### **Model Buildup (Mid Tier, L2)**
 
-Pre-storm trend is the only significant predictor across all specifications (`r pre_trend_coef`). Coastal becomes significant in the full specification (`r coastal_coef`), separating
-the specific effect of coastal location from NRI counterparts. Log damage, episode count, NRI risk value, EAL, resilience, and social vulnerability are all insignificant. Within R² is essentially flat
-from M1 to M5 (`r m1_r2w*100`% to `r m5_r2w*100`%) — storm and NRI variables add negligible explanatory power beyond pre-trend. The pre-trend coefficient implies strong mean reversion - counties underperforming before the storm outperform after, regardless of storm characteristics.
+Pre-storm trend is the only significant predictor across all specifications (`r pre_trend_coef`). Coastal becomes significant in the full specification (`r coastal_coef`), separating the specific effect of coastal location from NRI counterparts. Log damage, log income, log population density, NRI risk value, expected annual loss, resilience, and social vulnerability are all insignificant. Within R² is essentially flat from M1 to M5 (`r m1_r2w*100`% to `r m5_r2w*100`%) storm and NRI variables add negligible explanatory power beyond pre-trend. The pre-trend coefficient implies strong mean reversion. Counties underperforming before the storm outperform after, regardless of storm characteristics.
 
 ### **Baseline Sensitivity (Mid Tier, Preferred Spec)**
 
-Pre-trend coefficient varies by baseline: Regional (`r pre_trend_regional`) \> L2 (`r pre_trend_l2`) \> L1 (`r pre_trend_l1`), all significant at 1%. Coastal is significant only on L2 (`r coastal_l2`\*\*). Regional shows same direction (`r coastal_regional`) but wider SE. L1 shows no effect (`r coastal_l1`). Social vulnerability is significant on L1 only (`r sovi_l1`\*\*\*) with N=`r format(n_obs_l1, big.mark=",")`. Within R² ranges from `r r2w_l1`% (L1) to `r r2w_regional`% (Regional). No other variable reaches significance on any baseline. The null result on NRI expected annual loss, resiliency, and social vulnerability is robust to different baseline choices.
+Pre-trend coefficient varies by baseline: Regional (`r pre_trend_regional`) \> L2 (`r pre_trend_l2`) \> L1 (`r pre_trend_l1`), all significant at 1%. Coastal is significant only on L2 (`r coastal_l2`\*\*). Regional shows same direction (`r coastal_regional`) but wider SE. L1 shows no effect (`r coastal_l1`). NRI Risk Value approaches significance on L1 only (`r risk_l1`\*) with N=`r format(n_obs_l1, big.mark=",")`. Within R² ranges from `r r2w_l1`% (L1) to `r r2w_regional`% (Regional). No other variable reaches significance on any baseline. The null result on NRI risk value is robust to baseline choices.
 
 ### **Tier Comparison (L2, Preferred Spec)**
 
-Pre-trend significant and similar across all tiers (`r pre_trend_top` to `r pre_trend_mid`\*\*\*). Coastal significant on bottom (`r coastal_bottom`\*) and mid (`r coastal_mid`\*\*), not top (`r coastal_top`). Log damage significant on bottom tier only (`r damage_bottom`\*). Damage is associated with price depreciation in the lowest market segment. EAL marginally significant and positive on top tier only (`r eal_top`\*). Other NRI variables (resl_value, sovi_score) are insignificant and nearly identical across all three tiers. NRI does not capture tier-specific vulnerability. Within R² is highest on bottom tier (`r r2w_bottom`%) and lowest on top (`r r2w_top`%). Storm characteristics explain slightly more variance in financially vulnerable markets.
+Pre-trend significant and similar across all tiers (`r pre_trend_top` to `r pre_trend_mid`\*\*\*). Coastal significant on mid (`r coastal_mid`\*\*), but not bottom (`r coastal_bottom`\*) or top (`r coastal_top`). Log damage approaches significance on bottom tier only (`r damage_bottom`\*). Damage is associated with price depreciation in the lowest market segment. NRI risk coefficient varies across tiers, the null effect is robust across market segments. NRI does not capture tier-specific vulnerability. Within R² is highest on bottom tier (`r r2w_bottom`%) and lowest on top (`r r2w_top`%). Storm characteristics explain slightly more variance in financially vulnerable markets.
 
-## Local Projections
+## Local Projections of Damage Effect
 
 ```{r setup-lp}
 #| output: false
@@ -422,15 +460,53 @@ lp$fig_lp_tier
 
 Placebo region (T-3 to T-1) is flat for all tiers (maximum absolute coefficient `r lp_placebo_max`). The tier projection shows that much of the effect is focused in the bottom market tier, with coefficients ranging from `r lp_bottom_min` to `r lp_bottom_max` across post-storm horizons. Mid and top tier damage coefficients are indistinguishable from zero at all horizons. Effects show partial recovery at later horizons (T+9 coefficient = `r lp_bottom_t9` vs trough of `r lp_bottom_min`).
 
+# **Conclusion**
+
+- no evidence of relationship with NRI
+
+- respond to research questions
+
+- core findings
+
 # **Discussion**
 
-The dominant signal across all analysis is pre-existing momentum, not storm effects. The absolute trend is positive, but when we control for the pre-event trend, the coefficients is actually negative. L2 is the preferred baseline because it buffers spillover without introducing regional heterogeneity. However with so many events and factors that cross county boundaries, there is no one correct version of a baseline for comparison. Selecting an appropriate baseline is a balance of decontaminating the spillover and accurately capturing the local dynamics.
+## Income + Hedonic Results
 
-Bottom tier is uniquely damage-sensitive severely damaged homes would fall into the bottom tier from mid and top. It is also the most financially constrained market where forced sales, deferred repairs, and underinsurance are most likely to appear. Coastal penalty is strongest on bottom and mid, absent on top. Top market tier exhibits economic stability against storm events as amenity value protects high-end coastal property. Expected loss going positive after coastal control is a possible rebuild effect or a sign of stronger capitalization. These tier differences are economically meaningful even if marginally significant
+The hedonic regression analysis shows Income as the dominant predictor of ZHVI level. Other covariates are significant, but with much lower magnitude.
 
-NRI variables are insignificant as predictors of post-storm CIR. The model has sufficient sample to detect other effects (coastal, damage), so we believe these are genuine null results. Coastal status, which is partially contained within NRI through BRIC physical resilience, is independently significant when separated. The composite obscures rather than enhances the signal.The null result is robust to baseline choice, tier selection, and model specification
+## National Risk Index as a summary metric
 
-## Conclusions
+NRI variables are insignificant as predictors of post-storm CIR. When tested against the event study many of the significant factors of the hedonic regression turn to noise. The model has sufficient sample to detect other effects (coastal, damage), so we believe these are genuine null results.Counties with high NRI scores were indistinguishable from counties with low NRI. NRI may reflect long term or broad based analysis, but when examined through the specific events captured in NOAA storm data, the NRI and its components individually offer no explanatory power.
+
+- unimportant or unincluded in pricing
+
+- not granular
+
+- ignored by market?
+
+## ZHVI as a measurement
+
+One of the caveats to the findings on income and NRI is that storms can have targeted impacts that do not get fully captured in aggregated Zillow indices. A more clear picture of specific storm impacts could be seen with transaction level data. This is noted as an area for future investigation if a data source becomes available.
+
+## Challenges of NOAA data
+
+Storm data features high spillover rate without clear boundaries. This is evidenced by the differences in Adjacent (L1) and Second Ring (L2) baselines. We recognize that our qualification of a 'clean' baseline that has no recorded events does not necessarily mean that the baseline county did not experience weather. Additionally, reporting of events and damage levels is voluntary and reports can reflect the resources available for reporting rather than the actual levels of storms.
+
+## Natural experiment design
+
+The natural experiment design reflects the challenges of the storm and ZHVI data outlined above. L2 is the preferred baseline because it buffers spillover without introducing regional heterogeneity. However with so many events and factors that cross county boundaries, there is no one correct version of a baseline for comparison. Selecting an appropriate baseline is a balance of decontaminating the spillover and accurately capturing the local dynamics.
+
+### Pre-trend
+
+The dominant signal across all analysis is pre-existing momentum, not storm effects. In all cases the effect of the `r PRE_EVENT_MONTHS` months of pre-trend difference on the post-event performance is robust and significant to difference baselines and market tiers. The absolute trend is positive, but when we control for the pre-event trend, the coefficient is negative indicating a fluctuation in market direction that consistently happens around the storm cycle.
+
+### Coastal areas
+
+The difference in differences design has the power to detect a coastal effect which was significant on L2 but not on L1. This finding is consistent with the high level of spillover suspected with L1 neighbors, and supports L2 as the preferred baseline. Coastal penalty is strongest on bottom and mid, absent on top. Top market tier exhibits economic stability against storm events as amenity value protects high-end coastal property.
+
+### Damage significant but limited as expected
+
+The damage effect is significant, but only for the bottom market tier, which is the most financially constrained market where forced sales, deferred repairs, and underinsurance are most likely to appear. The damage effect, based on the local projections analysis, is most significant in the T+2 to T+5 timeframe.Conclusions
 
 The preferred baseline construction in the Second Ring (L2) set of neighbors. This group avoids the most significant spillover effects that impact Adjacent (L1) neighbors, and they closely follow the overall regional trends which have the most explanatory power in the regression results.
 
@@ -439,6 +515,8 @@ Storm effects exist only in certain market segments such as the bottom-tier effe
 The NRI Risk Value and its' composite metrics (resiliency, social vulnerability, and expected annual loss) offer no meaningful explanation to real world impact as measured on Zillow Home Value Index.
 
 ## Limitations
+
+- move measurements into here
 
 ZHVI is an index, not specifci market transaction so we cannot observe the fallout of mid and top tier homes into the bottom tier.
 
@@ -521,5 +599,3 @@ writeLines(readLines(here::here("paper", "output", "regression", "table_baseline
 #| tbl-cap: "Tier Comparison: Second Ring (L2) Baseline, Full NRI Specification"
 writeLines(readLines(here::here("paper", "output", "regression", "table_tier_comparison.tex")))
 ```
-
-### 
