@@ -1827,11 +1827,6 @@ decomposition):</strong> ZHVI ~ log(EAL) + log(CRF)</li>
 vulnerability):</strong> ZHVI ~ log(EAL) + resilience + SoVI</li>
 <li><strong>Spec D (Spec B + regime interaction):</strong> allow SoVI
 coefficient to differ pre/post March 2023</li>
-<li><strong>Spec E (Spec B - Sovi):</strong> check if resilience
-multicollinearity with sovi impacts coefficient</li>
-<li><strong>Spec F (Spec B - income):</strong> check to see what income
-is absorbing from the NRI values to flag whether the HVRI→CDC
-methodology change shifts the apparent SoVI premium</li>
 <li><strong>Spec G (Spec B + urban-rural continuum): </strong>* see if
 resilience coefficient changes when urban/ruralness accounted for</li>
 </ul>
@@ -1971,6 +1966,48 @@ etable(mA, mB, mC, mD, mE, mF, mG,
 ## Within Adj. R2                          0.43227
 ## ---
 ## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>dir.create(&quot;../paper/output/regression&quot;, recursive = TRUE, showWarnings = FALSE)
+
+etable(
+  mA, mB, mC, mD, mG,
+  headers = c(&quot;A: Controls&quot;, &quot;B: NRI decomp&quot;, &quot;C: Main&quot;, &quot;D: Regime&quot;, &quot;G: +RUCC&quot;),
+  dict = c(
+    log_income                    = &quot;Log median income&quot;,
+    log_pop_density               = &quot;Log pop.\\ density&quot;,
+    coastal                       = &quot;Coastal county&quot;,
+    log_eal                       = &quot;Log expected annual loss&quot;,
+    log_crf                       = &quot;Log community risk factor&quot;,
+    resl_value_z                  = &quot;Resilience&quot;,
+    sovi_score_z                  = &quot;Social vulnerability&quot;,
+    &quot;sovi_score_z:cdc_svi_regime&quot; = &quot;SoVI $\\times$ CDC regime&quot;
+  ),
+  fitstat = c(&quot;n&quot;, &quot;r2&quot;, &quot;war2&quot;),
+  digits  = 3,
+  title   = &quot;Hedonic regression: Dependent variable is log(ZHVI). State and month fixed effects throughout. Standard errors clustered at the county level.&quot;,
+  notes   = &quot;Spec A: controls only. B: NRI parsimonious (EAL + CRF). C: separates resilience and social vulnerability. D: adds SoVI $\\times$ CDC-regime interaction. G: adds RUCC urban-rural fixed effects.&quot;,
+  tex     = TRUE,
+  file    = &quot;../paper/output/regression/table_hedonic.tex&quot;
+)</code></pre>
+<pre class="r"><code>hedonic_inline &lt;- list(
+  # Spec A — income dominance
+  hed_income_coef = round(coef(mA)[&quot;log_income&quot;], 3),
+  hed_r2_A        = round(as.numeric(fitstat(mA, &quot;r2&quot;)), 3),
+
+  # Spec B — NRI composite null
+  hed_eal_coef_B  = round(coef(mB)[&quot;log_eal&quot;], 4),
+  hed_eal_pval_B  = round(2 * pnorm(-abs(coef(mB)[&quot;log_eal&quot;] / se(mB)[&quot;log_eal&quot;])), 3),
+
+  # Spec C — component decomposition
+  hed_r2_C        = round(as.numeric(fitstat(mC, &quot;r2&quot;)), 3),
+  hed_resl_coef_C = round(coef(mC)[&quot;resl_value_z&quot;], 3),
+  hed_sovi_coef_C = round(coef(mC)[&quot;sovi_score_z&quot;], 3),
+
+  # Spec D — regime decomposition
+  hed_sovi_base_D = round(coef(mD)[&quot;sovi_score_z&quot;], 3),
+  hed_sovi_int_D  = round(coef(mD)[&quot;sovi_score_z:cdc_svi_regime&quot;], 3)
+)
+
+saveRDS(hedonic_inline, &quot;../paper/output/regression/hedonic_inline.rds&quot;)</code></pre>
 <pre class="r"><code># Urban/rural control comparison
 etable(mB, mF, headers = c(&quot;No RUCC&quot;, &quot;RUCC FE&quot;), digits = 3)</code></pre>
 <pre><code>##                               mB                mF

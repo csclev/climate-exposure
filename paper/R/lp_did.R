@@ -106,7 +106,7 @@ run_lp <- function(baselines, output_dir) {
     scale_fill_manual(values  = TIER_COLORS) +
     labs(
       title    = "Dynamic Effect of Log Damage by Market Tier",
-      subtitle = "Second Ring (L2) baseline. Red = placebo. Blue = post-storm. 95% CI.",
+      subtitle = "Second Ring (L2) baseline. 95% CI.",
       x        = "Months Relative to Storm",
       y        = "Coefficient on Log Property Damage",
       color    = "Tier",
