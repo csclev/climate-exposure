@@ -176,7 +176,7 @@ This is a **descriptive correlation**, not a causal estimate. Coastal amenity co
 We need county-level controls that the NRI components don't already capture:
 
 - **Median household income** - dollars per year, log transformed
-- **Population Density -** people per square mile, log transformed
+- **Population Density -** people per square mile, log transformed (check)
 - **Coastal County Status** - account for coastal amenity and/or risk
 
 Considered but left off due to overlap with community resilience and social vulnerability calculations: - **Share with bachelor's degree+** - human capital, picks up labor market quality - **Share owner-occupied** - tenure mix shifts price dynamics - **Median age** - lifecycle/retiree composition, related to migration patterns - **Median year structure built** - housing stock vintage, captures durability
@@ -320,7 +320,7 @@ L2 and regional baselines must have at least 2 unaffected counties. Adjacent bas
 
 # **Event Study Results**
 
-## Event Study Trajectories
+## Trajectories
 
 ```{r setup-es}
 #| output: false
@@ -460,15 +460,29 @@ lp$fig_lp_tier
 
 Placebo region (T-3 to T-1) is flat for all tiers (maximum absolute coefficient `r lp_placebo_max`). The tier projection shows that much of the effect is focused in the bottom market tier, with coefficients ranging from `r lp_bottom_min` to `r lp_bottom_max` across post-storm horizons. Mid and top tier damage coefficients are indistinguishable from zero at all horizons. Effects show partial recovery at later horizons (T+9 coefficient = `r lp_bottom_t9` vs trough of `r lp_bottom_min`).
 
+# **Conclusion**
+
+- no evidence of relationship with NRI
+
+- respond to research questions
+
+- core findings
+
 # **Discussion**
 
-## Income
+## Income + Hedonic Results
 
 The hedonic regression analysis shows Income as the dominant predictor of ZHVI level. Other covariates are significant, but with much lower magnitude.
 
 ## National Risk Index as a summary metric
 
 NRI variables are insignificant as predictors of post-storm CIR. When tested against the event study many of the significant factors of the hedonic regression turn to noise. The model has sufficient sample to detect other effects (coastal, damage), so we believe these are genuine null results.Counties with high NRI scores were indistinguishable from counties with low NRI. NRI may reflect long term or broad based analysis, but when examined through the specific events captured in NOAA storm data, the NRI and its components individually offer no explanatory power.
+
+- unimportant or unincluded in pricing
+
+- not granular
+
+- ignored by market?
 
 ## ZHVI as a measurement
 
@@ -501,6 +515,8 @@ Storm effects exist only in certain market segments such as the bottom-tier effe
 The NRI Risk Value and its' composite metrics (resiliency, social vulnerability, and expected annual loss) offer no meaningful explanation to real world impact as measured on Zillow Home Value Index.
 
 ## Limitations
+
+- move measurements into here
 
 ZHVI is an index, not specifci market transaction so we cannot observe the fallout of mid and top tier homes into the bottom tier.
 
