@@ -170,7 +170,7 @@ acs <- acs_raw %>%
   filter(!is.na(median_hh_income))
 
 # Save a cached copy so we don't hammer the API on every render
-saveRDS(acs, "../data/processed/acs_controls.rds")
+#saveRDS(acs, "../data/processed/acs_controls.rds")
 
 summary(acs)
 ```
@@ -217,7 +217,7 @@ df %>%
 
 ## 5. Model specifications
 
-We run three specifications side by side. All use **state + month fixed effects** with
+We run six specifications side by side. All use **state + month fixed effects** with
 standard errors clustered at the county level.
 
 - **Spec A (parsimonious, NRI's intended decomposition):** ZHVI ~ log(EAL) + log(CRF)
@@ -226,7 +226,7 @@ standard errors clustered at the county level.
 - **Spec D (Spec B - Sovi):** check if resilience multicollinearity with sovi impacts coefficient
 - **Spec E (Spec B - income):** check to see what income is absorbing from the NRI values
   to flag whether the HVRI→CDC methodology change shifts the apparent SoVI premium
-- **Spec G (Spec B + urban-rural continuum): *** see if resilience coefficient changes when urban/ruralness accounted for
+- **Spec F (Spec B + urban-rural continuum): *** see if resilience coefficient changes when urban/ruralness accounted for
 
 ```{r specs}
 # Note: removed controls included in community resilience: share_bach_plus, share_owner_occ. Age partially included in social vulnerability calculation. Income also partially included, but keeping it as a separate control
@@ -295,7 +295,7 @@ each coefficient is approximately the percent change in ZHVI per 1% change in th
 For standardized predictors (`resl_value_z`, `sovi_score_z`): coefficients are the percent
 change in ZHVI per **1 standard deviation** increase in the predictor.
 
-For the binary `coastal` and the `share_*` and `median_age` controls: coefficients are
+For the binary `coastal` control: coefficients are
 percent change in ZHVI per unit change.
 
 **Expected directions if markets price climate risk and resilience:**
@@ -344,7 +344,7 @@ Loads the collapsed dataset built in `06_hedonic.ipynb`: one row per county per 
 vintage, with mean ZHVI over each vintage's coverage window. Sample drops from ~189k
 to ~9k.
 
-**Why this matters:**
+**Purpose:**
 
 - **Sidesteps the time-invariance issue with ACS controls.** In the panel, our 2019-2023
   ACS income is matched against ZHVI from 2020-2025 - real income changed over those
@@ -362,7 +362,7 @@ are not artifacts of time-aggregation choices. If they differ meaningfully, the
 cross-section should be preferred.
 
 ```{r xsec-load}
-xsec_1 <- read_csv("data/processed/hedonic_xsec_old.csv",
+xsec_1 <- read_csv("data/processed/hedonic_xsec.csv",
                  col_types = cols(
                    stcofips        = col_character(),
                    state           = col_character(),
@@ -377,50 +377,32 @@ xsec_1 <- read_csv("data/processed/hedonic_xsec_old.csv",
                    .default        = col_double()
                  ))
 
-cat("Cross-section rows: ", nrow(xsec), "\n")
+cat("Cross-section rows: ", nrow(xsec_1), "\n")
 cat("Counties per vintage:\n")
-print(table(xsec$nri_vintage))
+print(table(xsec_1$nri_vintage))
 ```
 
 ### Income data choices for the cross-section
 
 The collapsed cross-section opens up better income data than was available in the panel.
 For a cross-section, we want **county-level income matched to the vintage's coverage
-window**. Three reliable options, in order of recommendation:
+window**. 
 
-**Option 1 (recommended): ACS 5-year estimates from `tidycensus`, vintage-matched.**
+**ACS 5-year estimates from `tidycensus`, vintage-matched.**
 
-For each NRI vintage's window, pull the ACS 5-year estimate that *brackets* that window:
+For each NRI vintage's window, the ACS 5-year estimate that *brackets* that window:
 
 | NRI vintage | Window | ACS 5-year vintage to use |
 |---|---|---|
 | 2020 | Nov 2020 - Oct 2021 | ACS 2017-2021 (centered ~2019) |
 | 2021 | Nov 2021 - Feb 2023 | ACS 2018-2022 (centered ~2020) |
 | 2023 | Mar 2023 - Nov 2025 | ACS 2019-2023 (centered ~2021) |
+| 2025 | Nov 2025 - Mar 2026 | ACS 2020-2024 (2021-2025 not released yet) |
 
 This is internally consistent (each ZHVI mean is matched to an income measure from
 within the same window) and uses the most reliable Census product. ACS 1-year is more
 current but has unusable margins of error for small counties. We don't use ACS 1-year.
 
-**Option 2: BEA Local Area Personal Income (per-capita personal income, county-year).**
-
-[BEA Regional Data](https://apps.bea.gov/regional/) publishes county-year personal
-income through the most recent year. Captures *current* income (not 5-year backwards-
-looking averages). Annual frequency. The downside: per-capita personal income includes
-transfer payments, capital income, and proprietors' income, so it's a different concept
-than ACS median household income. Usually correlated >0.85 across counties, but the
-levels and ranges differ. Use as a robustness check, not the primary source.
-
-**Option 3: SAIPE (Small Area Income and Poverty Estimates).**
-
-Census Bureau's [SAIPE](https://www.census.gov/programs-surveys/saipe.html) publishes
-county-year **median household income** estimates with smaller standard errors than
-ACS for low-population counties. Annual frequency. Same conceptual measure as ACS
-median HH income but more precise for rural counties. Available via `tidycensus::get_saipe()`.
-
-For the collapsed cross-section, **I'd use Option 1 (ACS 5-year, vintage-matched)** as
-the primary source because it matches the analysis approach used in most published
-hedonic real estate work, and the vintage windows align cleanly with ACS releases.
 
 ```{r xsec-acs-vintage-matched, cache=TRUE}
 # Pull ACS for each vintage and stack
@@ -442,9 +424,10 @@ fetch_acs_1 <- function(end_year) {
 }
 
 acs_xs_1 <- bind_rows(
-  fetch_acs(2021) %>% mutate(nri_vintage = 2020L),
-  fetch_acs(2022) %>% mutate(nri_vintage = 2021L),
-  fetch_acs(2023) %>% mutate(nri_vintage = 2023L)
+  fetch_acs_1(2021) %>% mutate(nri_vintage = 2020L),
+  fetch_acs_1(2022) %>% mutate(nri_vintage = 2021L),
+  fetch_acs_1(2023) %>% mutate(nri_vintage = 2023L),
+  fetch_acs_1(2024) %>% mutate(nri_vintage = 2025L)
 ) %>%
   select(stcofips, nri_vintage, median_hh_income, acs_end_year)
 
@@ -492,6 +475,11 @@ xs_B <- feols(
 )
 
 # Single-vintage cuts: cleanest possible cross-section (no methodology mixing)
+xs_2025 <- feols(
+  log_zhvi ~ log_eal + resl_value_z + sovi_score_z + log_income + log_pop_density + coastal | state,
+  data = xsec1_df %>% filter(nri_vintage == 2025),
+  cluster = ~ stcofips
+)
 xs_2023 <- feols(
   log_zhvi ~ log_eal + resl_value_z + sovi_score_z + log_income + log_pop_density + coastal | state,
   data = xsec1_df %>% filter(nri_vintage == 2023),
@@ -510,9 +498,9 @@ xs_2020 <- feols(
 ```
 
 ```{r xsec-compare}
-etable(mB, xs_B, xs_2020, xs_2021, xs_2023,
-       headers = c("Panel", "XSec all", "XSec 2020", "XSec 2021", "XSec 2023"),
-       title   = "Panel hedonic vs vintage-collapsed cross-section 2025 excluded, full ZHVI window",
+etable(mB, xs_B, xs_2020, xs_2021, xs_2023, xs_2025,
+       headers = c("Panel", "XSec all", "XSec 2020", "XSec 2021", "XSec 2023", "XSec 2025"),
+       title   = "Panel hedonic vs vintage-collapsed cross-section, full ZHVI window",
        digits  = 3,
        fitstat = c("n", "r2"))
        # tex     = TRUE,
@@ -530,30 +518,46 @@ etable(mB, xs_B, xs_2020, xs_2021, xs_2023,
   ACS 2019-2023 income matched to mean ZHVI Mar 2023 - Nov 2025, no time variation
   in any predictor.
 
-## 8. Implied-discount-rate calibration (back-of-envelope)
+## 8. Minimum Detectable Effect (MDE)
 
-If a 1% increase in expected annual loss reduces ZHVI by β₁ percent, then β₁ implies the
-market's effective capitalization rate on hazard losses. Compare to a 5% benchmark
-(rough perpetuity discount on annual losses).
+The MDE is the smallest true effect this design could reliably detect, given the standard errors we observed. With α = 0.05 (two-sided) and 80% power, MDE ≈ 2.8 × SE — anything smaller than that, even if real, would more often than not fail to reach significance in a study of this size.
 
-```{r implied-rate}
-beta_eal <- coef(mB)["log_eal"]
+```{r mde, message=FALSE}
+library(fixest)
 
-# Median ZHVI and median EAL in the sample
-med_zhvi <- median(df$zhvi)
-med_eal  <- median(df$eal_valt)
+# Pull SEs from the pooled cross-section (xs_B). Swap in xs_2020/xs_2021/xs_2023/xs_2025
+# to see how MDE changes when N drops to a single vintage.
+mod <- xs_B
+se_vec <- se(mod)
 
-# Implied $ change in ZHVI from a $1 change in EAL (at the medians)
-implied_dollar <- beta_eal * med_zhvi / med_eal
-
-cat("β on log(EAL):                       ", round(beta_eal, 4), "\n")
-cat("Implied $-discount per $ of annual EAL:", round(implied_dollar, 2), "\n")
-cat("Benchmark (5% rate, perpetuity):       -20.00\n")
-cat("Example: ", -0.00225 * 300000 / 4000000,"\n")
-cat("\nIf the implied figure is ~-20, the market is pricing risk near a 5% rate.\n")
-cat("If it's ~ -2, the market is pricing risk near a 50% rate (heavy discount).\n")
-cat("If it's near 0 or positive, the market is essentially ignoring risk.\n")
+mde_tbl <- data.frame(
+  term   = names(se_vec),
+  beta   = coef(mod)[names(se_vec)],
+  se     = se_vec,
+  mde_80 = 2.8 * se_vec,           # 80% power, two-sided α = 0.05
+  mde_90 = 3.24 * se_vec           # 90% power, two-sided α = 0.05
+)
+mde_tbl <- mde_tbl[mde_tbl$term %in% c("log_eal", "resl_value_z", "sovi_score_z"), ]
+print(mde_tbl, row.names = FALSE)
 ```
+
+**Translation to dollars.** For `log_eal`, an elasticity β implies a marginal capitalization of roughly β × (median ZHVI / median EAL) dollars of price per $1 of expected annual loss.
+
+```{r mde-dollars}
+med_zhvi <- median(xsec1_df$zhvi,    na.rm = TRUE)
+med_eal  <- median(xsec1_df$eal_valt, na.rm = TRUE)
+scale_factor <- med_zhvi / med_eal
+
+mde_eal <- 2.8 * se(mod)["log_eal"]
+cat(sprintf(
+  "Median ZHVI: $%s; Median EAL: $%s\nMDE on log_eal (80%% power): %.4f\nImplied $-per-$1-EAL MDE: $%.5f\n5%% capitalization benchmark: $20.00 per $1 EAL\n",
+  format(round(med_zhvi), big.mark = ","),
+  format(round(med_eal),  big.mark = ","),
+  mde_eal, mde_eal * scale_factor
+))
+```
+
+**How to read it.** If the MDE on `log_eal` translates to (say) $3 per $1 of EAL, this design can rule out full 5% capitalization ($20) — the null result is informative — but it cannot distinguish "no pricing" from "small partial pricing" below the MDE threshold. 
 
 ## 9. Caveats and what this analysis cannot establish
 
