@@ -6,8 +6,7 @@ output:
   html_document:
     toc: true
     toc_float: true
-    code_folding: show
-    theme: flatly
+
 ---
 
 ```{r setup, include=FALSE}
@@ -15,6 +14,8 @@ knitr::opts_chunk$set(
   echo = TRUE, message = FALSE, warning = FALSE,
   fig.width = 9, fig.height = 5
 )
+
+knitr::opts_knit$set(root.dir = "/Users/davidschaaf/Projects/climate-exposure")
 ```
 
 ## Overview
@@ -274,10 +275,56 @@ mD <- feols(spec_D, data = df, cluster = ~ stcofips)
 mE <- feols(spec_E, data = df, cluster = ~ stcofips)
 mF <- feols(spec_F, data = df, cluster = ~ stcofips)
 
-etable(mA, mB, mC, mD, mE, mF, 
-       title = "Hedonic regression: log(ZHVI) on NRI components and controls",
-       digits  = 3,
-       fitstat = c("n", "r2", "war2"))
+  etable(mA, mB, mC, mD, mE, mF,
+         title = "Hedonic regression: log(ZHVI) on NRI components and controls",
+         headers = c("A", "B", "C", "D", "E", "F"),
+         dict = c(
+           log_zhvi                      = "Log home value (ZHVI)",
+           log_income                    = "Log median income",
+           log_pop_density               = "Log pop.\\ density",
+           coastal                       = "Coastal county",
+           log_eal                       = "Log expected annual loss",
+           log_crf                       = "Log community risk factor",
+           resl_value_z                  = "Resilience",
+           sovi_score_z                  = "Social vulnerability",
+           "sovi_score_z:cdc_svi_regime" = "SoVI $\\times$ CDC regime",
+           state                         = "State",
+           month_id                      = "Month",
+           "factor(rucc_2023)"           = "Urban-rural (RUCC)"
+         ),
+         digits  = 3,
+         fitstat = c("n", "r2", "war2"),
+         tex=TRUE,
+         file="paper/output/regression/hedonic_regression.tex")
+```
+
+```{r save-hedonic-inline}
+# Inline values consumed by paper/report.qmd (hedonic regression section).
+# Spec labels follow THIS file:
+#   A = EAL + CRF; B = resilience + SoVI; C = B + SoVI x CDC-regime interaction; D = B - SoVI.
+hedonic_inline <- list(
+  # Spec A — income elasticity (log-log): % change in ZHVI per 1% change in income
+  hed_income_coef = round(coef(mA)["log_income"], 3),
+
+  # Spec B — pooled social-vulnerability coefficient (per 1 SD)
+  hed_sovi_coef_B = round(coef(mB)["sovi_score_z"], 3),
+
+  # Spec C — base SoVI coefficient once the CDC-regime interaction is added
+  hed_sovi_coef_C = round(coef(mC)["sovi_score_z"], 3),
+
+  # Spec E — income removed: fragility of the remaining coefficients
+  hed_eal_coef_E  = round(coef(mE)["log_eal"], 3),
+  hed_resl_coef_E = round(coef(mE)["resl_value_z"], 3),
+  hed_sovi_coef_E = round(coef(mE)["sovi_score_z"], 3)
+)
+
+saveRDS(hedonic_inline, "paper/output/regression/hedonic_inline.rds")
+```
+
+```{r tbl-hedonic}
+#| results: 'asis'
+#| tbl-cap: "Hedonic regression specifications A, B, C, D, E"
+writeLines(readLines("paper/output/regression/hedonic_regression.tex"))
 ```
 
 ```{r}
@@ -334,8 +381,19 @@ m_pre2023 <- feols(spec_B,
 etable(mB, m_nocoast, m_state_cluster, m_2023plus, m_pre2023,
        headers = c("Main", "Inland only", "State cluster", "CDC regime", "HVRI regime"),
        title   = "Robustness checks against Spec B",
+       dict = c(
+         log_zhvi        = "Log home value (ZHVI)",
+         log_income      = "Log median income",
+         log_pop_density = "Log pop.\\ density",
+         coastal         = "Coastal county",
+         log_eal         = "Log expected annual loss",
+         resl_value_z    = "Resilience",
+         sovi_score_z    = "Social vulnerability"
+       ),
        digits  = 3,
-       fitstat = c("n", "r2"))
+       fitstat = c("n", "r2"),
+       tex     = TRUE,
+       file    = "paper/output/regression/table_robustness.tex")
 ```
 
 ## 7b. Cross-section robustness: one observation per county per NRI vintage
