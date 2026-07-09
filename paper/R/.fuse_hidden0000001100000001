@@ -78,10 +78,10 @@ run_regression <- function(baselines, output_dir) {
   }
   
   # Reorder: Regional, L2, L1
-  baseline_models <- baseline_models[c("Regional", "Second Ring (R2)", "First Ring (R1)")]
+  baseline_models <- baseline_models[c("Regional", "Second Ring (L2)", "Adjacent (L1)")]
   
   etable(baseline_models, tex = TRUE, dict = dict,
-         headers = c("Regional", "Second Ring (R2)", "First Ring (R1)"),
+         headers = c("Regional", "Second Ring (L2)", "Adjacent (L1)"),
          file = file.path(output_dir, "table_baseline_sensitivity.tex"))
   
   # ---- Table 3: Tier comparison (L2 baseline, M4 spec) ----

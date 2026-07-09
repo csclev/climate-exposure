@@ -106,7 +106,7 @@ run_lp <- function(baselines, output_dir) {
     scale_fill_manual(values  = TIER_COLORS) +
     labs(
       title    = "Dynamic Effect of Log Damage by Market Tier",
-      subtitle = "Second Ring (R2) baseline. 95% CI.",
+      subtitle = "Second Ring (L2) baseline. 95% CI.",
       x        = "Months Relative to Storm",
       y        = "Coefficient on Log Property Damage",
       color    = "Tier",
@@ -136,7 +136,7 @@ run_lp <- function(baselines, output_dir) {
   
   lp_by_baseline <- bind_rows(baseline_lp_list) |>
     mutate(baseline = factor(baseline, 
-                             levels = c("Regional", "Second Ring (R2)", "First Ring (R1)")))
+                             levels = c("Regional", "Second Ring (L2)", "Adjacent (L1)")))
   
   fig_lp_baseline <- ggplot(lp_by_baseline,
                             aes(x = horizon, y = estimate, color = baseline, fill = baseline)) +

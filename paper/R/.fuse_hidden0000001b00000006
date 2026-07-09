@@ -125,7 +125,7 @@ run_attribution <- function(baselines, reg, output_dir) {
     scale_y_continuous(labels = scales::dollar_format(suffix = "B")) +
     labs(
       title    = "Estimated Market Impact Decomposition by Tier",
-      subtitle = sprintf("Across %s study counties (R2), Total housing exposure: $%sT.",
+      subtitle = sprintf("Across %s study counties (L2), Total housing exposure: $%sT.",
                          format(n_study_counties, big.mark = ","),
                          format(round(total_market_cap / 1e12, 1))),
       x        = "Market Tier",

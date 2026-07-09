@@ -60,7 +60,7 @@ run_balance <- function(baselines, storms, output_dir) {
   }
   
   attrition_df <- bind_rows(attrition_rows) |>
-    mutate(baseline = factor(baseline, levels = c("Regional", "Second Ring (R2)", "First Ring (R1)")))
+    mutate(baseline = factor(baseline, levels = c("Regional", "Second Ring (L2)", "Adjacent (L1)")))
   
   write_csv(attrition_df, file.path(output_dir, "attrition_table.csv"))
   cat("\nAttrition:\n")
@@ -128,7 +128,7 @@ run_balance <- function(baselines, storms, output_dir) {
   
   # ---- Balance summary ----
   balance_summary <- diff_all |>
-    mutate(baseline = factor(baseline, levels = c("Regional", "Second Ring (R2)", "First Ring (R1)"))) |>
+    mutate(baseline = factor(baseline, levels = c("Regional", "Second Ring (L2)", "Adjacent (L1)"))) |>
     group_by(baseline) |>
     summarise(
       mean_zhvi   = round(mean(diff_zhvi, na.rm = TRUE), 3),
@@ -161,7 +161,7 @@ run_balance <- function(baselines, storms, output_dir) {
                       levels = c("diff_zhvi", "diff_income", "diff_resl", "diff_eal"),
                       labels = c("ZHVI at T=0 (log $)", "Median Income ($)", "Resilience Value", "Expected Annual Loss (log $)")
       ),
-      baseline = factor(baseline, levels = c("Regional", "Second Ring (R2)", "First Ring (R1)"))
+      baseline = factor(baseline, levels = c("Regional", "Second Ring (L2)", "Adjacent (L1)"))
     )
   
   # ---- Grid plot: rows = covariates, columns = baselines ----
