@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
   fig.width = 9, fig.height = 5
 )
 
-knitr::opts_knit$set(root.dir = "/Users/davidschaaf/Projects/climate-exposure")
+# knitr::opts_knit$set(root.dir = "/Users/davidschaaf/Projects/climate-exposure")
 ```
 
 ## Overview
@@ -315,7 +315,11 @@ hedonic_inline <- list(
   # Spec E — income removed: fragility of the remaining coefficients
   hed_eal_coef_E  = round(coef(mE)["log_eal"], 3),
   hed_resl_coef_E = round(coef(mE)["resl_value_z"], 3),
-  hed_sovi_coef_E = round(coef(mE)["sovi_score_z"], 3)
+  hed_sovi_coef_E = round(coef(mE)["sovi_score_z"], 3),
+
+  # Primary-spec log(EAL) range (A, B, C, D, F; excludes Spec E, which drops income and flips positive)
+  hed_eal_min = round(min(sapply(list(mA, mB, mC, mD, mF), function(m) coef(m)["log_eal"])), 3),
+  hed_eal_max = round(max(sapply(list(mA, mB, mC, mD, mF), function(m) coef(m)["log_eal"])), 3)
 )
 
 saveRDS(hedonic_inline, "paper/output/regression/hedonic_inline.rds")

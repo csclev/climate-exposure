@@ -80,6 +80,15 @@ hed_sovi_coef_C <- hed_inline$hed_sovi_coef_C  # Spec C base SoVI coefficient
 hed_eal_coef_E  <- hed_inline$hed_eal_coef_E   # Spec E (no income) log(EAL)
 hed_resl_coef_E <- hed_inline$hed_resl_coef_E  # Spec E (no income) resilience
 hed_sovi_coef_E <- hed_inline$hed_sovi_coef_E  # Spec E (no income) SoVI
+hed_eal_min     <- hed_inline$hed_eal_min      # most negative log(EAL) across primary specs
+hed_eal_max     <- hed_inline$hed_eal_max      # least negative log(EAL) across primary specs
+
+# Capitalization benchmark: full pricing of modeled EAL as a 5% perpetuity
+cap_units          <- 47000     # approx. housing units per county (US average)
+cap_home_value     <- 368720    # Zillow US median home value
+cap_county_eal     <- 14.8e6    # 2025 median county-total expected annual loss
+cap_rate           <- 0.05      # perpetuity discount rate
+cap_beta_benchmark <- round(-(cap_county_eal / cap_units / cap_home_value) / cap_rate, 3)
 ```
 
 # Abstract
@@ -92,11 +101,14 @@ hed_sovi_coef_E <- hed_inline$hed_sovi_coef_E  # Spec E (no income) SoVI
 
 ## Motivation
 
-Extreme weather events, including storms, floods, fires, tornadoes are becoming increasingly frequent, severe, and financially destabilizing. This volatility surged from 2020-2024, when inflation-adjusted annual costs for U.S. billion-dollar disasters averaged \$149.3B, more than doubling the \$64.8B average from 1980-2020 (Smith 2025). Despite insured losses reaching \~\$100B annually, markets have been slow to adapt (Coren 2024, Parshley 2023). 
+Extreme weather events, including storms, floods, fires, tornadoes are becoming increasingly frequent, severe, and financially destabilizing. This volatility surged from 2020-2024, when inflation-adjusted annual costs for U.S. billion-dollar disasters averaged $149.3B, more than doubling the $64.8B average from 1980-2020 (Smith 2025). Despite insured losses reaching ~$100B annually, markets have been slow to adapt (Coren 2024, Parshley 2023).
 
-FEMA's National Risk Index (NRI) is a composite metric created to determine the relative risk to 18 climatological hazards for all areas of the United States. We test whether real estate markets incorporate any of the risk factors into pricing.
+U.S. housing markets are the single largest household asset class and a primary transmission channel for climate risk into the broader economy. The Congressional Budget Office estimates that homes with federally-backed mortgages face roughly $190 billion in cumulative expected flood damage under current climate conditions over a 30-year horizon, rising to $258 billion under projected 2050 conditions. The 2024 hurricane season made this exposure concrete: Hurricanes Helene and Milton affected counties containing 2.5 million GSE-backed single-family loans with combined unpaid principal balance exceeding $526 billion, according to FHFA's analysis of active September 2024 portfolios.
 
-We stress test the hedonic findings with a natural experiment developed using NOAA storm data to understand how real estate markets respond post-hazard event and whether FEMA's expected annual loss, social vulnerability, and resiliency scores correlate with heterogeneous outcomes.
+Whether housing markets correctly price the climate risks these capital and underwriting decisions reflect is contested. Gourevitch et al. (2023, Nature Climate Change) estimate that U.S. residential properties are overvalued by $121-$237 billion due to unpriced flood risk, with 83 percent of at-risk properties located outside FEMA's Special Flood Hazard Area boundaries. If markets are systematically mispricing physical risk, the question of whether they correctly value the offsetting factor, community resilience capacity, becomes equally consequential.
+
+FEMA's Building Resilient Infrastructure and Communities program allocated $1 billion in the FY24-25 cycle that opened in March 2026, HUD's CDBG-MIT block grants have appropriated approximately $16 billion since 2018 for mitigation in disaster-affected areas, and the National Risk Index itself is built on the premise that ex-ante community resilience translates into measurable post-event outcomes. Yet the empirical record linking a county's resilience score to realized housing market performance after a storm is thin. 
+
 
 ## Prior Research
 
@@ -413,7 +425,7 @@ tc <- reg$tier_models
 damage_bottom      <- round(coef(tc[["Bottom"]])["log_damage"], 2)
 coastal_bottom     <- round(coef(tc[["Bottom"]])["coastal"], 2)
 coastal_mid        <- round(coef(tc[["Mid"]])["coastal"], 2)
-coastal_top        <- round(coef(tc[["Top"]])["coastal"], 2)
+coastal_top        <- round(coef(tc[["Top"]])["coastal"], 3)
 eal_top            <- round(coef(tc[["Top"]])["log_eal_valt"], 2)
 r2w_bottom   <- round(as.numeric(fitstat(tc[["Bottom"]], "wr2")) * 100, 1)
 r2w_mid_tier <- round(as.numeric(fitstat(tc[["Mid"]], "wr2")) * 100, 1)
@@ -436,13 +448,15 @@ Pre-storm trend is the only predictor significant in every specification (`r pre
 
 ### Baseline Sensitivity (Mid Tier, Preferred Spec)
 
-Baseline sensitivity results appear in @tbl-baseline. Pre-trend coefficient varies by baseline: Regional (`r pre_trend_regional`) \> R2 (`r pre_trend_l2`) \> R1 (`r pre_trend_l1`), all significant at 1%. Coastal is significant only on R2 (`r coastal_l2`\*\*). Regional shows same direction (`r coastal_regional`) but wider SE. R1 shows no effect (`r coastal_l1`). Within R² rises as the baseline moves farther from the target, from `r r2w_l1`% (R1) to `r r2w_regional`% (Regional): the pre-trend carries more explanatory power against more distant counterfactuals, so the baseline choice itself shifts the R². No other variable reaches significance at the 5% level. The null results on NRI risk value and storm characteristics are robust to baseline choices.
+Baseline sensitivity results appear in @tbl-baseline. Pre-trend coefficient varies by baseline: Regional (`r pre_trend_regional`) \> R2 (`r pre_trend_l2`) \> R1 (`r pre_trend_l1`), all significant at 1%. Coastal is significant only on R2 (`r coastal_l2`\*\*). Regional shows same direction (`r coastal_regional`) but wider SE. R1 shows no effect (`r coastal_l1`). Within R² rises as the baseline moves farther from the target, from `r r2w_l1`% (R1) to `r r2w_regional`% (Regional). The pre-trend carries more explanatory power against more distant counterfactuals, so the baseline choice itself shifts the R². No other variable reaches significance at the 5% level. The null results on NRI risk value and storm characteristics are robust to baseline choices.
 
 ### Tier Comparison (R2, Preferred Spec)
 
-Tier comparison results appear in @tbl-tier. Pre-trend significant and similar across all tiers (`r pre_trend_top` to `r pre_trend_mid`\*\*\*). Coastal is significant at 5% on mid (`r coastal_mid`\*\*), marginally significant on bottom (`r coastal_bottom`\*), and insignificant on top (`r coastal_top`). Log damage is marginally significant on the bottom tier only (`r damage_bottom`\*). Damage is associated with price depreciation in the lowest market segment. NRI risk coefficient varies across tiers, but the null effect is robust across market segments. NRI does not capture tier-specific vulnerability. Within R² is highest on bottom tier (`r r2w_bottom`%) and lowest on top (`r r2w_top`%). Storm characteristics explain slightly more variance in financially vulnerable markets.
+Tier comparison results appear in @tbl-tier. Pre-trend is significant and similar across all tiers (`r pre_trend_top` to `r pre_trend_mid`\*\*\*). Coastal is significant at 5% on mid (`r coastal_mid`\*\*), marginally significant on bottom (`r coastal_bottom`\*), and insignificant on top (`r coastal_top`). Log damage is marginally significant on the bottom tier only (`r damage_bottom`\*). Damage is associated with price depreciation in the lowest market segment. The NRI risk coefficient varies across tiers, but the null effect is robust across market segments. NRI does not capture tier-specific vulnerability. Within R² is highest on bottom tier (`r r2w_bottom`%) and lowest on top (`r r2w_top`%). Storm characteristics explain slightly more variance in financially vulnerable markets.
 
 ## Local Projections of Damage Effect
+
+The damage coefficient in the R2 baseline for the bottom market tier approaches but does not achieve significance when measured as cumulative impulse response. We investigate the temporal effect of damage to understand if it is significant for certain timeframes post-storm event using a local projection approach.
 
 ```{r setup-lp}
 #| output: false
@@ -464,45 +478,31 @@ lp_placebo <- lp$lp_by_tier |> filter(horizon < 0)
 lp_placebo_max <- round(max(abs(lp_placebo$estimate), na.rm = TRUE), 3)
 ```
 
+### Dynamic damage by baseline (Bottom tier):
+
+R2 baseline shows a significant negative damage signal post-storm with significance at T+2 through T+5. R1 baseline is flat, consistent with spillover contamination. Regional baseline is noisier and more reflective of covariate imbalance than meaningful effect. The pre-storm period is uncorrelated with damage.
+
 ```{r  fig-lp-baseline, fig.cap="Dynamic effect of log property damage on ZHVI deviation by baseline method. Bottom tier only. Progressive attenuation from R2 to R1 is consistent with spillover contamination of adjacent baselines.", fig.height=3.5}
 lp$fig_lp_baseline
-```
-
-### Dynamic damage by baseline (mid tier):
-
-R2 baseline shows the clearest negative damage signal post-storm. R1 baseline is flat, consistent with spillover contamination. Regional baseline is noisier and more reflective of covariate imbalance than meaningful effect.
-
-```{r  fig-lp-tier, fig.cap="Dynamic effect of log property damage on ZHVI deviation by market tier. Second Ring (R2) baseline. Red shading = placebo region (T-3 to T-1). Blue shading = post-storm window.", fig.height=3.5}
-lp$fig_lp_tier
 ```
 
 ### Damage by tier (R2 baseline):
 
 Placebo region (T-3 to T-1) is flat for all tiers (maximum absolute coefficient `r lp_placebo_max`). The tier projection shows that much of the effect is focused in the bottom market tier, with coefficients ranging from `r lp_bottom_min` to `r lp_bottom_max` across post-storm horizons. Mid and top tier damage coefficients are indistinguishable from zero at all horizons. Effects show partial recovery at later horizons (T+9 coefficient = `r lp_bottom_t9` vs trough of `r lp_bottom_min`).
 
-# Conclusion
-
-- no evidence of relationship with NRI
-
-- respond to research questions
-
-- core findings
+```{r  fig-lp-tier, fig.cap="Dynamic effect of log property damage on ZHVI deviation by market tier. Second Ring (R2) baseline. Red shading = placebo region (T-3 to T-1). Blue shading = post-storm window.", fig.height=3.5}
+lp$fig_lp_tier
+```
 
 # Discussion
 
 ## Income + Hedonic Results
 
-The hedonic regression analysis shows Income as the dominant predictor of ZHVI level. Other covariates are significant, but with much lower magnitude.
+The hedonic regression analysis shows income as the dominant predictor of ZHVI level. However, during a storm event recovery period the significance of income disappears for the relative dynamics. Even stratifying the effect by housing market tier does not show income having influence over the ZHVI CIR.
 
 ## National Risk Index as a summary metric
 
-NRI variables are insignificant as predictors of post-storm CIR. When tested against the event study many of the significant factors of the hedonic regression turn to noise. The model has sufficient sample to detect other effects (coastal, damage), so we believe these are genuine null results.Counties with high NRI scores were indistinguishable from counties with low NRI. NRI may reflect long term or broad based analysis, but when examined through the specific events captured in NOAA storm data, the NRI and its components individually offer no explanatory power.
-
-- unimportant or unincluded in pricing
-
-- not granular
-
-- ignored by market?
+NRI variables are insignificant as predictors of post-storm CIR. When tested against the event study, many of the significant factors of the hedonic regression turn to noise. The model has sufficient sample to detect other effects (coastal, damage), so we believe these are genuine null results. Counties with high NRI scores are indistinguishable from counties with low NRI. NRI may reflect long-term or broad-based risk, but when examined through the specific events captured in NOAA storm data, the NRI and its components individually offer no explanatory power.
 
 ## ZHVI as a measurement
 
@@ -514,29 +514,37 @@ Storm data features high spillover rate without clear boundaries. This is eviden
 
 ## Natural experiment design
 
-The natural experiment design reflects the challenges of the storm and ZHVI data outlined above. R2 is the preferred baseline because it buffers spillover without introducing regional heterogeneity. However with so many events and factors that cross county boundaries, there is no one correct version of a baseline for comparison. Selecting an appropriate baseline is a balance of decontaminating the spillover and accurately capturing the local dynamics.
+The natural experiment design reflects the challenges of the storm and ZHVI data outlined above. R2 is the preferred baseline because it buffers spillover without introducing regional heterogeneity. However, with so many events and factors that cross county boundaries, there is no one correct version of a baseline for comparison. Selecting an appropriate baseline is a balance of decontaminating the spillover and accurately capturing the local dynamics.
 
 ### Pre-trend
 
-The dominant signal across all analysis is pre-existing momentum, not storm effects. In all cases the effect of the `r PRE_EVENT_MONTHS` months of pre-trend difference on the post-event performance is robust and significant to difference baselines and market tiers. The absolute trend is positive, but when we control for the pre-event trend, the coefficient is negative indicating a fluctuation in market direction that consistently happens around the storm cycle.
+The dominant signal across all analyses is pre-existing momentum, not storm effects. In all cases the effect of the `r PRE_EVENT_MONTHS` months of pre-trend difference on the post-event performance is robust and significant across different baselines and market tiers. Counties appreciate on average post-storm, but that appreciation is a rebound: the pre-trend coefficient is negative, indicating a fluctuation in market direction that consistently happens around the storm cycle.
 
 ### Coastal areas
 
-The difference in differences design has the power to detect a coastal effect which was significant on R2 but not on R1. This finding is consistent with the high level of spillover suspected with R1 neighbors, and supports R2 as the preferred baseline. Coastal penalty is strongest on bottom and mid, absent on top. Top market tier exhibits economic stability against storm events as amenity value protects high-end coastal property.
+The difference-in-differences design has the power to detect a coastal effect that is significant on R2 but not on R1. This finding is consistent with the high level of spillover suspected with R1 neighbors, and supports R2 as the preferred baseline. Coastal penalty is strongest on bottom and mid, absent on top. Top market tier exhibits economic stability against storm events as amenity value protects high-end coastal property.
 
 ### Damage significant but limited as expected
 
-The damage effect is significant, but only for the bottom market tier, which is the most financially constrained market where forced sales, deferred repairs, and underinsurance are most likely to appear. The damage effect, based on the local projections analysis, is most significant in the T+2 to T+5 timeframe.Conclusions
+The damage effect is significant, but only for the bottom market tier, which is the most financially constrained market where forced sales, deferred repairs, and underinsurance are most likely to appear. The damage effect, based on the local projections analysis, is most significant in the T+2 to T+5 timeframe.
 
-The preferred baseline construction in the Second Ring (R2) set of neighbors. This group avoids the most significant spillover effects that impact First Ring (R1) neighbors, and they closely follow the overall regional trends which have the most explanatory power in the regression results.
+# Conclusions
 
-Storm effects exist only in certain market segments such as the bottom-tier effect of damage, but they are small in magnitude.
+The descriptive hedonic cross-section analysis and a storm-based natural experiment both find FEMA NRI and its climate-risk components to be essentially null predictors of home values. Because the designs analyze the ZHVI with different methodology, the agreement indicates the null reflects the data rather than a single specification choice.
 
-The NRI Risk Value and its' composite metrics (resiliency, social vulnerability, and expected annual loss) offer no meaningful explanation to real world impact as measured on Zillow Home Value Index.
+The absolute level of county home values is dominated by income, followed by amenity (coastal location) and population density. These are the expected structural drivers of housing value, and their prominence is consistent with prior hedonic work.
+
+In the storm experiment, the dominant signal is pre-existing price momentum, not a hazard response. Post-storm trajectories are governed by mean reversion; property damage is only marginally associated with depreciation in the bottom market tier, and NRI resilience does not moderate the magnitude or duration of recovery.
+
+The expectation might be that property prices reflect risk by penalizing riskiness and rewarding resilience characteristics. We do not find evidence in this investigation of property prices accounting for NRI factors. Both the descriptive and causal examinations yield null results in areas one might expect a relationship.  This result could be explained by a number of scenarios, among them, A) property pricing is determined by an array of factors, the bulk of which outweigh any climate risk or resilience as measured by NRI, B) NRI measures a number of factors only some of which matter to pricing, C) NRI is a poor measure of climate related risk or resilience as related to pricing, D) climate risk is ignored by property markets resulting in inefficiency. 
 
 ## Limitations
 
-- move measurements into here
+This regression measures correlation conditional on observables. The county-level coastal dummy and ACS controls do not fully purge amenity bias (people pay more to live near oceans regardless of climate risk). The hedonic coefficient is therefore a lower bound on the true risk discount in absolute terms - the market may discount risk more than we measure, but the amenity premium is netting against it.
+
+The SoVI methodology break in March 2023 means the pooled-sample SoVI coefficient mixes two different measurements. The regime-interaction term in Spec C and the stratified robustness checks test whether this matters in practice.
+
+ZHVI is smoothed and seasonally adjusted. For the cross-sectional question this matters less than for the event study, but month-to-month price discovery is attenuated.
 
 ZHVI is an index, not specifci market transaction so we cannot observe the fallout of mid and top tier homes into the bottom tier.
 
@@ -545,6 +553,7 @@ NOAA damage reporting is inconsistent creating significant noise in the storm ef
 The post-storm window of 9 months could be too short to fully observe the long term effects. Weather data is inherently noisy and we cannot control for temporal spillover without losing significant sample.
 
 NRI methodology changed within study, which could obscure the effect.
+
 
 # References
 

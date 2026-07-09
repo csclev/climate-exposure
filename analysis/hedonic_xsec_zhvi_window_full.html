@@ -1806,7 +1806,11 @@ hedonic_inline &lt;- list(
   # Spec E — income removed: fragility of the remaining coefficients
   hed_eal_coef_E  = round(coef(mE)[&quot;log_eal&quot;], 3),
   hed_resl_coef_E = round(coef(mE)[&quot;resl_value_z&quot;], 3),
-  hed_sovi_coef_E = round(coef(mE)[&quot;sovi_score_z&quot;], 3)
+  hed_sovi_coef_E = round(coef(mE)[&quot;sovi_score_z&quot;], 3),
+
+  # Primary-spec log(EAL) range (A, B, C, D, F; excludes Spec E, which drops income and flips positive)
+  hed_eal_min = round(min(sapply(list(mA, mB, mC, mD, mF), function(m) coef(m)[&quot;log_eal&quot;])), 3),
+  hed_eal_max = round(max(sapply(list(mA, mB, mC, mD, mF), function(m) coef(m)[&quot;log_eal&quot;])), 3)
 )
 
 saveRDS(hedonic_inline, &quot;paper/output/regression/hedonic_inline.rds&quot;)</code></pre>
