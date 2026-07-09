@@ -21,9 +21,9 @@ dir.create(here::here("paper", "output", "hedonic"), recursive = TRUE, showWarni
 # Coefficient Plot (horizontal forest)
 # Pull coefficients and SEs from fixest object directly
 coef_df <- data.frame(
-  term      = names(coef(mB)),
-  estimate  = coef(mB),
-  std.error = se(mB)
+  term      = names(coef(mC)),
+  estimate  = coef(mC),
+  std.error = se(mC)
 ) %>%
   mutate(
     conf.low  = estimate - 1.96 * std.error,
@@ -69,8 +69,8 @@ get_coefs <- function(model, model_label) {
 }
 
 coef_compare <- bind_rows(
-  get_coefs(mE, "Without income"),
-  get_coefs(mB, "With income")
+  get_coefs(mF, "Without income"),
+  get_coefs(mC, "With income")
 ) %>%
   filter(term %in% c("log_eal", "resl_value_z", "sovi_score_z", "coastal"))
 
@@ -88,7 +88,7 @@ income_comparison_plot <- ggplot(coef_compare, aes(x = estimate, y = term, color
   theme_minimal()
 
 # Urban/Ruralness ruled out
-rucc_summary <- hed_df %>%
+rucc_summary <- df %>%
   distinct(stcofips, .keep_all = TRUE) %>%
   group_by(rucc_2023) %>%
   summarise(
@@ -124,17 +124,17 @@ urban_rural_plot <- ggplot(rucc_summary, aes(x = rucc_2023, y = indexed, color =
 
 # Scatter/Partial-residual plot (binned)
 # Residualize ZHVI and EAL on controls + FE
-hed_df$zhvi_resid <- residuals(feols(log_zhvi ~ log_income + log_pop_density + coastal | state + month_id, data = hed_df))
-hed_df$eal_resid  <- residuals(feols(log_eal  ~ log_income + log_pop_density + coastal | state + month_id, data = hed_df))
+df$zhvi_resid <- residuals(feols(log_zhvi ~ log_income + log_pop_density + coastal | state + month_id, data = df))
+df$eal_resid  <- residuals(feols(log_eal  ~ log_income + log_pop_density + coastal | state + month_id, data = df))
 
-partial_residual_bins_plot <- binsreg(y = hed_df$zhvi_resid, x = hed_df$eal_resid, nbins = 30, line = c(3, 3))
+partial_residual_bins_plot <- binsreg(y = df$zhvi_resid, x = hed_df$eal_resid, nbins = 30, line = c(3, 3))
 
 # Map of Residuals
 # State Map
 # Pull observations that fixest actually used (handles dropped rows)
-df_used <- hed_df[obs(mB), ]   # if this errors, df is already aligned to mB
+df_used <- df[obs(mB), ]   # if this errors, df is already aligned to mB
 
-df_used$.resid <- residuals(mB)
+df_used$.resid <- residuals(mC)
 
 county_resid <- df_used %>%
   group_by(stcofips) %>%
@@ -170,14 +170,14 @@ hedonic_residual_state_map <- ggplot(map_df) +
   theme_void()
 
 # National Map
-mB_noFE <- feols(
+mC_noFE <- feols(
   log_zhvi ~ log_eal + resl_value_z + sovi_score_z +
     log_income + log_pop_density + coastal | month_id,
-  data = hed_df, cluster = ~ stcofips
+  data = df, cluster = ~ stcofips
 )
 
-county_resid_noFE <- hed_df[obs(mB_noFE), ] %>%
-  mutate(.resid = residuals(mB_noFE)) %>%
+county_resid_noFE <- df[obs(mC_noFE), ] %>%
+  mutate(.resid = residuals(mC_noFE)) %>%
   group_by(stcofips) %>%
   summarise(mean_resid = mean(.resid, na.rm = TRUE), .groups = "drop")
 # Force types match exactly
