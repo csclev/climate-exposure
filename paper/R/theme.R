@@ -32,8 +32,8 @@ TIER_LABELS <- c(
 
 BASELINE_COLORS <- c(
   "Regional"         = "#fc8d62",
-  "Second Ring (L2)" = "#8da0cb",
-  "Adjacent (L1)"    = "#66c2a5"
+  "Second Ring (R2)" = "#8da0cb",
+  "First Ring (R1)"    = "#66c2a5"
 )
 
 # ---- Shared theme ----

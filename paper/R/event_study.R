@@ -35,7 +35,7 @@ run_event_study <- function(baselines, output_dir) {
         .groups  = "drop"
       ) |>
       mutate(baseline = factor(baseline, 
-                               levels = c("Regional", "Second Ring (L2)", "Adjacent (L1)"))) |>
+                               levels = c("Regional", "Second Ring (R2)", "First Ring (R1)"))) |>
       ggplot(aes(x = month_t, y = mean_dev, color = baseline, fill = baseline)) +
       geom_hline(yintercept = 0, linetype = "dashed", color = "grey50", linewidth = 0.5) +
       geom_vline(xintercept = 0, linetype = "dotted", color = "grey50", linewidth = 0.5) +
