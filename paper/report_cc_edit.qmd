@@ -93,7 +93,10 @@ cap_beta_benchmark <- round(-(cap_county_eal / cap_units / cap_home_value) / cap
 
 # Abstract
 
-\[TBD\]
+FEMA's National Risk Index (NRI) is a composite metric created to determine the relative risk to 18 climatological hazards for all areas of the United States. Using a 2 part investigation, we first test whether real estate markets incorporate any of its risk or resilience components into pricing.
+Next we stress test the hedonic findings with a natural experiment developed using NOAA storm data to understand how real estate markets respond post-hazard event and whether FEMA's expected annual loss, social vulnerability, and resiliency scores correlate with heterogeneous outcomes.  
+This study does not find evidence of climate risk factors definitively incorporated into property pricing. 
+
 
 \newpage
 
