@@ -1771,7 +1771,7 @@ mF &lt;- feols(spec_F, data = df, cluster = ~ stcofips)
 
   etable(mA, mB, mC, mD, mE, mF,
          title = &quot;Hedonic regression: log(ZHVI) on NRI components and controls&quot;,
-         headers = c(&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;, &quot;E&quot;, &quot;F&quot;),
+         headers = c(&quot;NRI Basic&quot;, &quot;NRI Split&quot;, &quot;NRI Regime&quot;, &quot;No SOVI&quot;, &quot;No Income&quot;, &quot;Urban-Rural FE&quot;),
          dict = c(
            log_zhvi                      = &quot;Log home value (ZHVI)&quot;,
            log_income                    = &quot;Log median income&quot;,
@@ -2205,6 +2205,20 @@ translates to (say) $3 per $1 of EAL, this design can rule out full 5%
 capitalization ($20) — the null result is informative — but it cannot
 distinguish “no pricing” from “small partial pricing” below the MDE
 threshold.</p>
+<pre class="r"><code>source(here::here(&quot;paper&quot;, &quot;R&quot;, &quot;06_hedonic_plots_rev.R&quot;))
+hed_plots &lt;- run_hedonic_plots(
+  df       = df,        # panel analytic frame
+  xsec_df  = xsec1_df,  # vintage-collapsed cross-section
+  models   = list(
+    mC      = mC,                       # panel main spec (Spec C)
+    mE      = mE,                       # panel, income removed
+    xs_B    = xs_B,                     # cross-section main (analog of Spec C)
+    xs_2020 = xs_2020, xs_2021 = xs_2021,
+    xs_2023 = xs_2023, xs_2025 = xs_2025
+  ),
+  output_dir = here::here(&quot;paper&quot;, &quot;output&quot;, &quot;hedonic&quot;)
+)</code></pre>
+<pre><code>## Hedonic figures saved to /Users/davidschaaf/Projects/climate-exposure/paper/output/hedonic (6 figures)</code></pre>
 </div>
 <div id="caveats-and-what-this-analysis-cannot-establish" class="section level2">
 <h2>9. Caveats and what this analysis cannot establish</h2>

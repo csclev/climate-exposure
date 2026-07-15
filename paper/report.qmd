@@ -93,7 +93,10 @@ cap_beta_benchmark <- round(-(cap_county_eal / cap_units / cap_home_value) / cap
 
 # Abstract
 
-\[TBD\]
+FEMA's National Risk Index (NRI) is a composite metric created to determine the relative risk to 18 climatological hazards for all areas of the United States. Using a 2 part investigation, we first test whether real estate markets incorporate any of its risk or resilience components into pricing.
+Next we stress test the hedonic findings with a natural experiment developed using NOAA storm data to understand how real estate markets respond post-hazard event and whether FEMA's expected annual loss, social vulnerability, and resiliency scores correlate with heterogeneous outcomes.  
+This study does not find evidence of climate risk factors definitively incorporated into property pricing. 
+
 
 \newpage
 
@@ -112,17 +115,17 @@ FEMA's Building Resilient Infrastructure and Communities program allocated $1 bi
 
 ## Prior Research
 
-No federal requirement for climate risk disclosure in residential real estate transactions. This creates information asymmetry: buyers may not know the risk profile of a property or county. Baldauf (2020) found \~7% price discount in neighborhoods with more "climate believers", suggesting beliefs, not data, drive pricing. Bernstein (2019) documented similar discounts for homes exposed to sea-level rise
+There is no federal requirement for climate risk disclosure in residential real estate transactions. This creates information asymmetry: buyers may not know the risk profile of a property or county. Baldauf (2020) found \~7% price discount in neighborhoods with more "climate believers", suggesting beliefs, not data, drive pricing. Bernstein (2019) documented similar discounts for homes exposed to sea-level rise.
 
 Bakkensen (2017) estimated flood-prone waterfront properties were overvalued by 13% relative to non-flood zones - amenity value overrides risk. This contradicts the efficient markets hypothesis - if risk were priced correctly, flood-prone properties would trade at a discount, not a premium. The conflict between Baldauf/Bernstein (discount) and Bakkensen (premium) highlights that the market applies climate data erratically.
 
 When risk is realized through extreme weather, delinquency rates rise and valuations fluctuate (Ma 2023, Wowk 2021). Büchler (2024) found commercial investors exposed to local heat shocks reactively rebalance - selling risky assets after the fact rather than pricing risk proactively. This reactive pattern suggests markets are not efficiently incorporating climate risk.
 
-Prior work focuses on cross-sectional pricing (is risk priced at a point in time?) or post-hoc portfolio adjustment. This study examines the dynamic response. What happens to housing values in the months following a storm event, measured against a local counterfactual baseline? FEMA NRI provides a standardized measure of community resilience that we test as a moderator of post-storm recovery. We also examine whether baseline construction methodology affects the detectability of the effect
+Prior work focuses on cross-sectional pricing (is risk priced at a point in time?) or post-hoc portfolio adjustment. This study examines the dynamic response. What happens to housing values in the months following a storm event, measured against a local counterfactual baseline? FEMA NRI provides a standardized measure of community resilience that we test as a moderator of post-storm recovery. We also examine whether baseline construction methodology affects the detectability of the effect.
 
 # Data
 
-We examine county level data for housing economic, severe weather events, and climate risk factors. Data spans six full years from 2020-2025 in the 48 contiguous states. Alaska, Hawaii, and Puerto Rico are excluded because the geographic isolation differentiates those areas from the rest of the US States.
+We examine county level data for housing economic, severe weather event, and climate risk factors. Data spans six full years from 2020-2025 in the 48 contiguous states. Alaska, Hawaii, and Puerto Rico are excluded because the geographic isolation differentiates those areas from the rest of the US States.
 
 ## Housing Market (Zillow ZHVI)
 
@@ -180,11 +183,11 @@ We use a 2 phase approach to understand real estate market pricing relative to e
 
 We examine a descriptive cross-county hedonic regression of Zillow Home Value Index (ZHVI) on FEMA National Risk Index (NRI) components, controlling for ACS demographics and state and month fixed effects. The goal is to document whether higher climate risk and lower community resilience are associated with lower property values, conditional on observables.
 
-Second, we test the hedonicmodel using a natural experiment with NOAA storm events. When a county is hit by a storm, we attempt to measure the market response relative to severity and damages. The neighboring counties that were unaffected by storm episodes serve as a counterfactual baseline though potential spillover effects must be considered. We estimate a full response curve to storm damages over the 9 months following a storm event.
+Second, we test the hedonic model using a natural experiment with NOAA storm events. When a county is hit by a storm, we attempt to measure the market response relative to severity and damages. The neighboring counties that were unaffected by storm episodes serve as a counterfactual baseline though potential spillover effects must be considered. We estimate a full response curve to storm damages over the 9 months following a storm event.
 
 Local Projections Difference-in-Differences (Dube, Girardi, Jordà, Taylor 2025) provides the framework for measuring dynamic treatment effects of discrete shocks. LP-DiD estimates a response curve across post-treatment periods, capturing both the magnitude and duration of a shock's effect. This is well-suited to storm events where the housing market response may be immediate, delayed, or cumulative.
 
-We simplify the LP-DiD approach by pre-computing the Cumulative Impulse Response (CIR): the sum of monthly deviations across the post-storm window. CIR captures both severity and persistence in a single quantity. A county with a small but prolonged deviation scores similarly to one with a large but brief deviation. The tradeoff: collapsing the time dimension loses information about when effects materialize and how quickly they dissipate. We complement CIR with horizon-specific local projections that measure the temporal dynamics of the response to damages
+We simplify the LP-DiD approach by pre-computing the Cumulative Impulse Response (CIR): the sum of monthly deviations across the post-storm window. CIR captures both severity and persistence in a single quantity. A county with a small but prolonged deviation scores similarly to one with a large but brief deviation. The tradeoff: collapsing the time dimension loses information about when effects materialize and how quickly they dissipate. We complement CIR with horizon-specific local projections that measure the temporal dynamics of the response to damages.
 
 This approach requires a counterfactual: what would have happened absent the storm? Storm events are likely to have high rates of spillover across country boundaries that are not recorded in the NOAA data set. The frequency and geographic reach of spillover are unknown quantities. Directly adjacent neighboring counties would be most economically suitable for a counterfactual, but the spillover effect will also be highest for direct neighbors. We consider a baseline sensitivity analysis to understand the spillover of storm events.
 
@@ -216,16 +219,14 @@ We run six specifications side by side. All use state + month fixed effects with
 - **Spec B (separates resilience from social vulnerability):** ZHVI \~ log(EAL) + resilience + SoVI
 - **Spec C (Spec B + regime interaction):** allow SoVI coefficient to differ pre/post March 2023
 - **Spec D (Spec B - Sovi):** check if resilience multicollinearity with sovi impacts coefficient
-- **Spec E (Spec B - income):** check to see what income is absorbing from the NRI values to flag whether the HVRI→CDC methodology change shifts the apparent SoVI premium
-- **Spec F (Spec B + urban-rural continuum):** \* see if resilience coefficient changes when urban/ruralness accounted for
-
-```{r tbl-hedonic}
-#| results: 'asis'
-#| tbl-cap: "Hedonic regression specifications A, B, C, D, E, F"
-writeLines(readLines(here::here("paper", "output", "regression", "hedonic_regression.tex")))
-```
+- **Spec E (Spec B - income):** check to see what income is absorbing from the NRI values
+- **Spec F (Spec B + urban-rural continuum):** \ see if resilience coefficient changes when urban/ruralness accounted for
 
 ## Results
+
+```{r fig-hedonic-coeff, fig.cap="Hedonic regression coefficients on log(ZHVI)"}
+knitr::include_graphics(here::here("paper", "output", "hedonic", "hedonic_coefficient_plot.pdf"))
+```
 
 The hedonic regression operates on a county-month panel of approximately `r n_hedonic_obs` observations. @tbl-hedonic shows the full results.
 
@@ -243,9 +244,14 @@ The persistence of these specifications’ results is tested with multiple robus
 
 Specs are attempted excluding coastal counties, using more conservative state clustered standard errors, and differentiating the pre and post-2023 time periods marking the SoVI measurement change (@tbl-robustness). All deliver results of a similar magnitude and sign with the exceptions of larger standard errors in the state-clustered model, and larger magnitude and significance level log(EAL), resilience, and SoVI in the pre-2023 regime.
 
-Going further, a collapsed panel cross-section using one observation per county per NRI vintage is constructed as a check against: attenuation in the income coefficient (a single 5-year income value) across the interpolated panel, or possible flaws in the interpolation method capturing within-county time variation. Each observation uses a mean ZHVI +/-6 month window from NRI release (with the exception of 2025 that uses a 9 month window due to availability of data). The results of this more strict cross section hold coefficients of similar sign and magnitude. The only exceptions are the individual 2020 and 2021 results which have larger log(EAL) and resilience coefficients.
+Going further, a collapsed panel cross-section using one observation per county per NRI vintage is constructed as a check against: attenuation in the income coefficient (a single 5-year income value) across the interpolated panel, or possible flaws in the interpolation method capturing within-county time variation. Each observation uses a mean ZHVI +/-6 month window from NRI release (with the exception of 2025 that uses a -6 to +3 month window due to availability of data). The results of this more strict cross section hold coefficients of similar sign and magnitude. The only exceptions are the individual 2020 and 2021 results which have larger log(EAL) and resilience coefficients.
 
-A minimum detectable effect (MDE) analysis (α = 0.05 (two-sided) and 80% power, MDE ≈ 2.8 × SE) shows that the log(EAL) coefficients in our more conservative cross section are below the detectable effect threshold of 0.0149. They are not significant in our result, but small enough that we would likely not detect an effect. Resilience and SoVI coefficients, on the other hand, exceed the MDE threshold at 80% power of 0.024 and 0.01. 
+A minimum detectable effect (MDE) analysis (α = 0.05 (two-sided) and 80% power, MDE ≈ 2.8 × SE) shows that the log(EAL) coefficients in our more conservative cross section are below the detectable effect threshold of 0.0149. They are not significant in our result, but small enough that we would likely not detect an effect. Resilience and SoVI coefficients, on the other hand, exceed the MDE threshold at 80% power of 0.024 and 0.01. See @fig-hedonic-mde.
+
+This many tests warrant an eye on the multiple comparisons problem. In this case, we believe risk is mitigated by the facts that: the results are largely consistent in sign and magnitude, despite significant effects this is largely a null result being thoroughly examined, and results are interpreted conservatively in this study. 
+
+## Sensitivity and Interpretation
+If a 1% increase in expected annual loss reduces ZHVI by β₁ percent, then β₁ implies the market's effective capitalization rate on hazard losses. A common benchmark would be a 5% rough perpetuity discount on annual losses. Consider a county with the average US housing stock (~47,000 units) at the Zillow US median home value of \$368,720, carrying the 2025 median county-total expected annual loss of \$14.8M. That is ~\$315 of modeled annual loss per home. Full capitalization at a 5% perpetuity rate implies each home should lose \$315 / 0.05 = $6,300 in value — about 1.7% of the home's value. In the log-log specification this corresponds to β* = −(315/368,720)/0.05 ≈ −0.017.The estimated β_log(EAL) of −0.002 to −0.007 (statistically insignificant across primary specs) is roughly one-third to one-tenth of this reference and not distinguishable from zero; consistent with the market not measurably capitalizing modeled EAL at the county level. In this example, the corresponding log(EAL) coefficient would be above our minimum detectable effect threshold. One interesting note, the only models where EAL increased and was significant were the 2020 and 2021 specific snapshots, and the pre-2023 regime check: -.035***, -.022***, and -0.016** respectively, all near or above this reference threshold and significant, which may suggest a more measurable relationship in that time period compared to the years following.
 
 # Event Study Design
 
@@ -452,7 +458,7 @@ Baseline sensitivity results appear in @tbl-baseline. Pre-trend coefficient vari
 
 ### Tier Comparison (R2, Preferred Spec)
 
-Tier comparison results appear in @tbl-tier. Pre-trend is significant and similar across all tiers (`r pre_trend_top` to `r pre_trend_mid`\*\*\*). Coastal is significant at 5% on mid (`r coastal_mid`\*\*), marginally significant on bottom (`r coastal_bottom`\*), and insignificant on top (`r coastal_top`). Log damage is marginally significant on the bottom tier only (`r damage_bottom`\*). Damage is associated with price depreciation in the lowest market segment. The NRI risk coefficient varies across tiers, but the null effect is robust across market segments. NRI does not capture tier-specific vulnerability. Within R² is highest on bottom tier (`r r2w_bottom`%) and lowest on top (`r r2w_top`%). Storm characteristics explain slightly more variance in financially vulnerable markets.
+ZHVI tier comparison results appear in @tbl-tier. Pre-trend is significant and similar across all tiers (`r pre_trend_top` to `r pre_trend_mid`\*\*\*). Coastal is significant at 5% on mid (`r coastal_mid`\*\*), marginally significant on bottom (`r coastal_bottom`\*), and insignificant on top (`r coastal_top`). Log damage is marginally significant on the bottom tier only (`r damage_bottom`\*). Damage is associated with price depreciation in the lowest market segment. The NRI risk coefficient varies across tiers, but the null effect is robust across market segments. NRI does not capture tier-specific vulnerability. Within R² is highest on bottom tier (`r r2w_bottom`%) and lowest on top (`r r2w_top`%). Storm characteristics explain slightly more variance in financially vulnerable markets.
 
 ## Local Projections of Damage Effect
 
@@ -542,7 +548,7 @@ The expectation might be that property prices reflect risk by penalizing riskine
 
 This regression measures correlation conditional on observables. The county-level coastal dummy and ACS controls do not fully purge amenity bias (people pay more to live near oceans regardless of climate risk). The hedonic coefficient is therefore a lower bound on the true risk discount in absolute terms - the market may discount risk more than we measure, but the amenity premium is netting against it.
 
-The SoVI methodology break in March 2023 means the pooled-sample SoVI coefficient mixes two different measurements. The regime-interaction term in Spec C and the stratified robustness checks test whether this matters in practice.
+The SoVI methodology break in March 2023 means the pooled-sample SoVI coefficient mixes two different measurements. The regime-interaction term in Spec C and the stratified robustness checks test whether this matters in practice. Possibilities include market changes over the time period, differences in measurement (and quality of operationalization), i.e. if the SoVI estimate started explaining more and absorbed some explanatory power of EAL and Resillience. Coefficients on log(EAL), resilience, and SoVI hold sign and comparable magnitude moving from the full county-month panel (Spec C) to the vintage-collapsed cross-section (xs_B), which is some reassurance that the pooled estimates are not an artifact of the SoVI regime break, though it does not rule it out (@fig-hedonic-panel-vs-xsec).
 
 ZHVI is smoothed and seasonally adjusted. For the cross-sectional question this matters less than for the event study, but month-to-month price discovery is attenuated.
 
@@ -551,6 +557,8 @@ ZHVI is an index, not specifci market transaction so we cannot observe the fallo
 NOAA damage reporting is inconsistent creating significant noise in the storm effect signal.
 
 The post-storm window of 9 months could be too short to fully observe the long term effects. Weather data is inherently noisy and we cannot control for temporal spillover without losing significant sample.
+
+The filtered subset of isolated county storm events with a storm-free window around the event and neighbors without storms in the same time period may be specific enough to hamper generalizability to the overall county-storm population.
 
 NRI methodology changed within study, which could obscure the effect.
 
@@ -587,13 +595,33 @@ Wowk, C. (2021). Burning down the house: How inadequate climate risk disclosures
 
 Zivin, J.G., Liao, Y., & Panassié, Y. (2023). How hurricanes sweep up housing markets: Evidence from Florida. *Journal of Environmental Economics and Management*, 118.
 
+\newpage
 # Appendix
+
+```{r fig-hedonic-income}
+knitr::include_graphics(here::here("paper", "output", "hedonic", "hedonic_income_comparison.pdf"))
+```
+
+```{r tbl-hedonic}
+#| results: 'asis'
+#| tbl-cap: "Hedonic regression specifications A, B, C, D, E, F"
+writeLines(readLines(here::here("paper", "output", "regression", "hedonic_regression.tex")))
+```
 
 ```{r tbl-robustness}
 #| results: 'asis'
 #| tbl-cap: "Hedonic robustness checks against Spec B: inland-only sample, state-clustered standard errors, and CDC (2023+) vs HVRI (pre-2023) SoVI regimes."
 writeLines(readLines(here::here("paper", "output", "regression", "table_robustness.tex")))
 ```
+
+```{r fig-hedonic-mde}
+knitr::include_graphics(here::here("paper", "output", "hedonic", "hedonic_mde_plot.pdf"))
+```
+
+```{r fig-hedonic-panel-vs-xsec, fig.cap="Panel hedonic vs. vintage-collapsed cross-section, full ZHVI window: log(EAL), resilience, and SoVI coefficients compared across the full county-month panel (Spec C) and the vintage-collapsed cross-section (xs_B)."}
+knitr::include_graphics(here::here("paper", "output", "hedonic", "hedonic_panel_vs_xsec_plot.pdf"))
+```
+
 
 ```{r fig-events-type, fig.cap="Storm events by year and type across all county-month observations."}
 knitr::include_graphics(here::here("paper", "output", "storms", "fig_events_by_type.pdf"))

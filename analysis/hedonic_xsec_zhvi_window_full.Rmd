@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
   fig.width = 9, fig.height = 5
 )
 
-# knitr::opts_knit$set(root.dir = "/Users/davidschaaf/Projects/climate-exposure")
+knitr::opts_knit$set(root.dir = "/Users/davidschaaf/Projects/climate-exposure")
 ```
 
 ## Overview
@@ -277,7 +277,7 @@ mF <- feols(spec_F, data = df, cluster = ~ stcofips)
 
   etable(mA, mB, mC, mD, mE, mF,
          title = "Hedonic regression: log(ZHVI) on NRI components and controls",
-         headers = c("A", "B", "C", "D", "E", "F"),
+         headers = c("NRI Basic", "NRI Split", "NRI Regime", "No SOVI", "No Income", "Urban-Rural FE"),
          dict = c(
            log_zhvi                      = "Log home value (ZHVI)",
            log_income                    = "Log median income",
@@ -619,7 +619,23 @@ cat(sprintf(
 ))
 ```
 
-**How to read it.** If the MDE on `log_eal` translates to (say) $3 per $1 of EAL, this design can rule out full 5% capitalization ($20) — the null result is informative — but it cannot distinguish "no pricing" from "small partial pricing" below the MDE threshold. 
+**How to read it.** If the MDE on `log_eal` translates to (say) $3 per $1 of EAL, this design can rule out full 5% capitalization ($20) — the null result is informative — but it cannot distinguish "no pricing" from "small partial pricing" below the MDE threshold.
+
+```{r hedonic-plots-rev, message=FALSE}
+source(here::here("paper", "R", "06_hedonic_plots_rev.R"))
+hed_plots <- run_hedonic_plots(
+  df       = df,        # panel analytic frame
+  xsec_df  = xsec1_df,  # vintage-collapsed cross-section
+  models   = list(
+    mC      = mC,                       # panel main spec (Spec C)
+    mE      = mE,                       # panel, income removed
+    xs_B    = xs_B,                     # cross-section main (analog of Spec C)
+    xs_2020 = xs_2020, xs_2021 = xs_2021,
+    xs_2023 = xs_2023, xs_2025 = xs_2025
+  ),
+  output_dir = here::here("paper", "output", "hedonic")
+)
+```
 
 ## 9. Caveats and what this analysis cannot establish
 
