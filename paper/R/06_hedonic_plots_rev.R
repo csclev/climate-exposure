@@ -1,16 +1,16 @@
 # 06_hedonic_plots.R
 # Reporting visuals for the cross-sectional hedonic study.
-# Source of truth for the analysis: analysis/hedonic_xsec.Rmd
+# Source of truth for the analysis: analysis/hedonic_xsec_zhvi_window_full.Rmd
 #
 # This module mirrors the run_*(args, output_dir) pattern used by event_study.R
 # and balance.R: it takes the fitted models + data already built in the Rmd and
 # returns a named list of ggplot objects, while also writing PDFs to output_dir.
 #
-# Usage from analysis/hedonic_xsec.Rmd (after the fit chunks):
+# Usage from analysis/hedonic_xsec_zhvi_window_full.Rmd (after the fit chunks):
 # source(here::here("paper", "R", "06_hedonic_plots_rev.R"))
 # hed_plots <- run_hedonic_plots(
 #   df       = df,        # panel analytic frame
-#   xsec_df  = xsec_df,   # vintage-collapsed cross-section
+#   xsec_df  = xsec1_df,   # vintage-collapsed cross-section
 #   models   = list(
 #     mC      = mC,                       # panel main spec (Spec C)
 #     mE      = mE,                       # panel, income removed

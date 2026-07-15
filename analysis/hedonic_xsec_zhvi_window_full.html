@@ -1627,7 +1627,7 @@ rucc &lt;- read_excel(rucc_file, sheet = 1) %&gt;%
     rucc_2023 = as.integer(RUCC_2023),
     # metro_nonmetro = ifelse(rucc_2023 &lt;= 3, &quot;metro&quot;, &quot;nonmetro&quot;) make binary
   )
-
+rucc_2023 &lt;- rucc[&#39;rucc_2023&#39;]
 hed &lt;- hed %&gt;% inner_join(rucc, by = &quot;stcofips&quot;)</code></pre>
 <pre class="r"><code>acs &lt;- acs_raw %&gt;%
   transmute(
@@ -1790,30 +1790,6 @@ mF &lt;- feols(spec_F, data = df, cluster = ~ stcofips)
          fitstat = c(&quot;n&quot;, &quot;r2&quot;, &quot;war2&quot;),
          tex=TRUE,
          file=&quot;paper/output/regression/hedonic_regression.tex&quot;)</code></pre>
-<pre class="r"><code># Inline values consumed by paper/report.qmd (hedonic regression section).
-# Spec labels follow THIS file:
-#   A = EAL + CRF; B = resilience + SoVI; C = B + SoVI x CDC-regime interaction; D = B - SoVI.
-hedonic_inline &lt;- list(
-  # Spec A — income elasticity (log-log): % change in ZHVI per 1% change in income
-  hed_income_coef = round(coef(mA)[&quot;log_income&quot;], 3),
-
-  # Spec B — pooled social-vulnerability coefficient (per 1 SD)
-  hed_sovi_coef_B = round(coef(mB)[&quot;sovi_score_z&quot;], 3),
-
-  # Spec C — base SoVI coefficient once the CDC-regime interaction is added
-  hed_sovi_coef_C = round(coef(mC)[&quot;sovi_score_z&quot;], 3),
-
-  # Spec E — income removed: fragility of the remaining coefficients
-  hed_eal_coef_E  = round(coef(mE)[&quot;log_eal&quot;], 3),
-  hed_resl_coef_E = round(coef(mE)[&quot;resl_value_z&quot;], 3),
-  hed_sovi_coef_E = round(coef(mE)[&quot;sovi_score_z&quot;], 3),
-
-  # Primary-spec log(EAL) range (A, B, C, D, F; excludes Spec E, which drops income and flips positive)
-  hed_eal_min = round(min(sapply(list(mA, mB, mC, mD, mF), function(m) coef(m)[&quot;log_eal&quot;])), 3),
-  hed_eal_max = round(max(sapply(list(mA, mB, mC, mD, mF), function(m) coef(m)[&quot;log_eal&quot;])), 3)
-)
-
-saveRDS(hedonic_inline, &quot;paper/output/regression/hedonic_inline.rds&quot;)</code></pre>
 <pre class="r"><code>writeLines(readLines(&quot;paper/output/regression/hedonic_regression.tex&quot;))</code></pre>
 <pre class="r"><code># Urban/rural control comparison
 etable(mB, mF, headers = c(&quot;No RUCC&quot;, &quot;RUCC FE&quot;), digits = 3)</code></pre>
@@ -2239,6 +2215,39 @@ price discovery is attenuated.</p>
 <p>The event study (notebook <code>05</code>) provides a complementary,
 less amenity-confounded test of whether markets <em>update</em> when
 risk is realized via storm.</p>
+<pre class="r"><code># Inline values consumed by paper/report.qmd (hedonic regression section).
+# Spec labels follow THIS file:
+#   A = EAL + CRF; B = resilience + SoVI; C = B + SoVI x CDC-regime interaction; D = B - SoVI.
+hedonic_inline &lt;- list(
+  # Spec A — income elasticity (log-log): % change in ZHVI per 1% change in income
+  hed_income_coef = round(coef(mA)[&quot;log_income&quot;], 3),
+
+  # Spec B — pooled social-vulnerability coefficient (per 1 SD)
+  hed_sovi_coef_B = round(coef(mB)[&quot;sovi_score_z&quot;], 3),
+
+  # Spec C — base SoVI coefficient once the CDC-regime interaction is added
+  hed_sovi_coef_C = round(coef(mC)[&quot;sovi_score_z&quot;], 3),
+
+  # Spec E — income removed: fragility of the remaining coefficients
+  hed_eal_coef_E  = round(coef(mE)[&quot;log_eal&quot;], 3),
+  hed_resl_coef_E = round(coef(mE)[&quot;resl_value_z&quot;], 3),
+  hed_sovi_coef_E = round(coef(mE)[&quot;sovi_score_z&quot;], 3),
+
+  # Primary-spec log(EAL) range (A, B, C, D, F; excludes Spec E, which drops income and flips positive)
+  hed_eal_min = round(min(sapply(list(mA, mB, mC, mD, mF), function(m) coef(m)[&quot;log_eal&quot;])), 3),
+  hed_eal_max = round(max(sapply(list(mA, mB, mC, mD, mF), function(m) coef(m)[&quot;log_eal&quot;])), 3),
+  mA = mA,
+  mB = mB,
+  mC = mC,
+  mD = mD,
+  mE = mE,
+  mF = mF,
+  rucc_df = df,
+  hed_df = hed
+  
+)
+
+saveRDS(hedonic_inline, &quot;paper/output/regression/hedonic_inline.rds&quot;)</code></pre>
 </div>
 
 
