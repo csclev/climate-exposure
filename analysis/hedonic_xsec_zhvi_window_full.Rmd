@@ -26,9 +26,8 @@ month fixed effects. The goal is to document whether higher climate risk and low
 community resilience are associated with lower property values, conditional on
 observables.
 
-This is a **descriptive correlation**, not a causal estimate. Coastal amenity confounds
-the risk signal at the county level even with the controls included here. The event
-study (notebook `05`) is the complementary causal analysis.
+This is a **descriptive correlation**, not a causal estimate. The event
+study is the complementary causal analysis.
 
 ## 1. Setup
 
@@ -232,7 +231,6 @@ standard errors clustered at the county level.
 - **Spec F (Spec B + urban-rural continuum): *** see if resilience coefficient changes when urban/ruralness accounted for
 
 ```{r specs}
-# Note: removed controls included in community resilience: share_bach_plus, share_owner_occ. Age partially included in social vulnerability calculation. Income also partially included, but keeping it as a separate control
 ctrls <- "log_income + log_pop_density + coastal"
 fe    <- "state + month_id"
 
@@ -379,7 +377,7 @@ etable(mB, m_nocoast, m_state_cluster, m_2023plus, m_pre2023,
 
 ## 7b. Cross-section robustness: one observation per county per NRI vintage
 
-Loads the collapsed dataset built in `06_hedonic.ipynb`: one row per county per NRI
+Loads the collapsed dataset built in `06_hedonic_xsec.ipynb`: one row per county per NRI
 vintage, with mean ZHVI over each vintage's coverage window. Sample drops from ~189k
 to ~9k.
 
@@ -423,10 +421,6 @@ print(table(xsec_1$nri_vintage))
 
 ### Income data choices for the cross-section
 
-The collapsed cross-section opens up better income data than was available in the panel.
-For a cross-section, we want **county-level income matched to the vintage's coverage
-window**. 
-
 **ACS 5-year estimates from `tidycensus`, vintage-matched.**
 
 For each NRI vintage's window, the ACS 5-year estimate that *brackets* that window:
@@ -440,7 +434,7 @@ For each NRI vintage's window, the ACS 5-year estimate that *brackets* that wind
 
 This is internally consistent (each ZHVI mean is matched to an income measure from
 within the same window) and uses the most reliable Census product. ACS 1-year is more
-current but has unusable margins of error for small counties. We don't use ACS 1-year.
+current but has unusable margins of error for small counties.
 
 
 ```{r xsec-acs-vintage-matched, cache=TRUE}
@@ -551,7 +545,7 @@ etable(mB, xs_B, xs_2020, xs_2021, xs_2023, xs_2025,
 
 - If `log_eal`, `resl_value_z`, and `sovi_score_z` coefficients hold sign and rough
   magnitude across panel and cross-section, the panel findings are robust.
-- SEs widen because n drops from ~189k to ~9k (or ~3k for single-vintage cuts) -
+- SEs widen because n drops from ~189k to ~9k (or ~3k for single-vintage) -
   expected and not a problem unless coefficients also change sign.
 - The 2023 cross-section is the cleanest single-vintage cut: CDC SVI throughout,
   ACS 2019-2023 income matched to mean ZHVI Mar 2023 - Nov 2025, no time variation
@@ -630,7 +624,7 @@ ZHVI is smoothed and seasonally adjusted. For the cross-sectional question this
 matters less than for the event study, but month-to-month price discovery is
 attenuated.
 
-The event study (notebook `05`) provides a complementary, less amenity-confounded
+The event study provides a complementary, less amenity-confounded
 test of whether markets *update* when risk is realized via storm.
 
 

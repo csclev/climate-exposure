@@ -1,5 +1,5 @@
 # 06_hedonic_plots.R
-# Reporting visuals for the cross-sectional hedonic study.
+# Additional reporting visuals for the cross-sectional hedonic study.
 # Source of truth for the analysis: analysis/hedonic_xsec_zhvi_window_full.Rmd
 #
 # This module mirrors the run_*(args, output_dir) pattern used by event_study.R
@@ -86,11 +86,8 @@ run_hedonic_plots <- function(df, xsec_df, models, output_dir) {
   figs <- list()
 
   # ---------------------------------------------------------------------------
-  # FIGURE 1 - Coefficient forest plot (headline)
-  # The single most useful "what did the market price?" chart. Uses the main
-  # cross-sectional spec xs_B (analog of panel Spec C). Tells the story in one
-  # frame: income dominates, EAL is an indistinguishable-from-zero null, and
-  # resilience / SoVI are the climate-side terms that actually move.
+  # FIGURE 1 - Cross section coefficient forest plot (headline)
+  # Uses the main # cross-sectional spec xs_B (analog of panel Spec C). 
   # ---------------------------------------------------------------------------
   coef_df <- hed_tidy(models$xs_B) %>%
     filter(term %in% names(HED_TERM_LABELS))
@@ -104,7 +101,7 @@ run_hedonic_plots <- function(df, xsec_df, models, output_dir) {
                                   "Not significant" = HED_COL_NULL)) +
     scale_x_continuous(labels = label_number(accuracy = 0.01)) +
     labs(
-      title    = "What the property market prices: hedonic coefficients on log(ZHVI)",
+      title    = "What the Property Market Prices: Hedonic Coefficients on log(ZHVI)",
       subtitle = "Vintage-collapsed cross-section (Spec xs_B); state + vintage FE; county-clustered SEs. Bars = 95% CI.",
       x        = "Coefficient  (≈ % change in ZHVI)",
       y        = NULL, color = NULL
@@ -113,10 +110,9 @@ run_hedonic_plots <- function(df, xsec_df, models, output_dir) {
 
   # ---------------------------------------------------------------------------
   # FIGURE 2 - Minimum detectable effect vs. estimate
-  # The credibility chart. Plots |coefficient| against its 80% / 90% MDE
-  # threshold for the three climate terms. Shows directly that the EAL null is
-  # a power story we can defend (EAL falls short of detectability) while
-  # resilience and SoVI clear the bar - so their estimates are real signal.
+  # Plots |coefficient| against its 80% / 90% MDE
+  # threshold for the three climate terms. EAL falls short of detectability while
+  # resilience and SoVI clear the bar.
   # MDE_80 = 2.8 * SE, MDE_90 = 3.24 * SE (alpha = 0.05 two-sided).
   # ---------------------------------------------------------------------------
   mde_terms <- c("log_eal", "resl_value_z", "sovi_score_z")
@@ -142,8 +138,8 @@ run_hedonic_plots <- function(df, xsec_df, models, output_dir) {
                                   "Below MDE"  = HED_COL_NEG)) +
     scale_x_continuous(labels = label_number(accuracy = 0.001)) +
     labs(
-      title    = "Can this design even detect these effects? Estimate vs. minimum detectable effect",
-      subtitle = "Grey band = 80%–90% power MDE (2.8–3.24 × SE). Dot = |estimate|. EAL falls short of detectability; resilience & SoVI clear it.",
+      title    = "Estimate vs. minimum detectable effect",
+      subtitle = "Grey band = 80%–90% power MDE (2.8–3.24 × SE). Dot = |estimate|. EAL falls short of detectability",
       x        = "Absolute coefficient magnitude",
       y        = NULL, color = NULL
     ) +
@@ -178,7 +174,7 @@ run_hedonic_plots <- function(df, xsec_df, models, output_dir) {
                                   "Cross-section (xs_B, ~9k obs)" = "#e08214")) +
     scale_x_continuous(labels = label_number(accuracy = 0.01)) +
     labs(
-      title    = "Findings survive the panel → cross-section move",
+      title    = "Panel vs Cross Section Consistency",
       subtitle = "Same sign and rough magnitude across specifications; cross-section CIs widen as n drops. Bars = 95% CI.",
       x        = "Coefficient  (≈ % change in ZHVI)",
       y        = NULL, color = NULL
@@ -187,7 +183,7 @@ run_hedonic_plots <- function(df, xsec_df, models, output_dir) {
 
   # ---------------------------------------------------------------------------
   # FIGURE 4 - log(EAL) coefficient by single NRI vintage
-  # The most novel finding. The pooled EAL coefficient is a null, but the
+  # The pooled EAL coefficient is a null, but the
   # single-vintage cuts reveal a negative, significant EAL price discount in the
   # earlier vintages (2020/2021) that fades to noise by 2023/2025. The dashed
   # line is the ~ -0.017 implied-discount-rate benchmark (5% perpetuity
@@ -267,10 +263,9 @@ run_hedonic_plots <- function(df, xsec_df, models, output_dir) {
   }
 
   # ---------------------------------------------------------------------------
-  # FIGURE 6 (optional) - County residual map
-  # Where the model over-/under-predicts ZHVI relative to its state. Useful for
-  # an appendix; guarded behind tigris/sf availability so the core figures
-  # render on machines without the spatial stack.
+  # FIGURE 6 - County residual map
+  # Where the model over-/under-predicts ZHVI relative to its state. tigris/sf 
+  # dependency.
   # ---------------------------------------------------------------------------
   has_spatial <- requireNamespace("tigris", quietly = TRUE) &&
                  requireNamespace("sf", quietly = TRUE)
