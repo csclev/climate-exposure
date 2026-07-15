@@ -18,6 +18,19 @@ options(tigris_use_cache = TRUE)
 
 dir.create(here::here("paper", "output", "hedonic"), recursive = TRUE, showWarnings = FALSE)
 
+hed_inline <- readRDS(here::here("paper", "output", "regression", "hedonic_inline.rds"))
+mA <- hed_inline$mA
+mB <- hed_inline$mB
+mC <- hed_inline$mC
+mD <- hed_inline$mD
+mE <- hed_inline$mE
+mF <- hed_inline$mF
+df <- hed_inline$rucc_df
+hed_df <- hed_inline$hed_df
+
+print(hed_inline)
+
+
 # Coefficient Plot (horizontal forest)
 # Pull coefficients and SEs from fixest object directly
 coef_df <- data.frame(
@@ -127,7 +140,7 @@ urban_rural_plot <- ggplot(rucc_summary, aes(x = rucc_2023, y = indexed, color =
 df$zhvi_resid <- residuals(feols(log_zhvi ~ log_income + log_pop_density + coastal | state + month_id, data = df))
 df$eal_resid  <- residuals(feols(log_eal  ~ log_income + log_pop_density + coastal | state + month_id, data = df))
 
-partial_residual_bins_plot <- binsreg(y = df$zhvi_resid, x = hed_df$eal_resid, nbins = 30, line = c(3, 3))
+partial_residual_bins_plot <- binsreg(y = df$zhvi_resid, x = df$eal_resid, nbins = 30, line = c(3, 3))
 
 # Map of Residuals
 # State Map

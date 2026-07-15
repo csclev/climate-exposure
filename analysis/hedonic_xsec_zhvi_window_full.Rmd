@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
   fig.width = 9, fig.height = 5
 )
 
-# knitr::opts_knit$set(root.dir = "/Users/davidschaaf/Projects/climate-exposure")
+knitr::opts_knit$set(root.dir = "/Users/davidschaaf/Projects/climate-exposure")
 ```
 
 ## Overview
@@ -153,8 +153,10 @@ rucc <- read_excel(rucc_file, sheet = 1) %>%
     rucc_2023 = as.integer(RUCC_2023),
     # metro_nonmetro = ifelse(rucc_2023 <= 3, "metro", "nonmetro") make binary
   )
-
+rucc_2023 <- rucc['rucc_2023']
 hed <- hed %>% inner_join(rucc, by = "stcofips")
+
+
 ```
 
 
@@ -277,7 +279,7 @@ mF <- feols(spec_F, data = df, cluster = ~ stcofips)
 
   etable(mA, mB, mC, mD, mE, mF,
          title = "Hedonic regression: log(ZHVI) on NRI components and controls",
-         headers = c("A", "B", "C", "D", "E", "F"),
+         headers = c("NRI Basic", "NRI Split", "NRI Regime", "No SOVI", "No Income", "Urban-Rural FE"),
          dict = c(
            log_zhvi                      = "Log home value (ZHVI)",
            log_income                    = "Log median income",
@@ -298,32 +300,7 @@ mF <- feols(spec_F, data = df, cluster = ~ stcofips)
          file="paper/output/regression/hedonic_regression.tex")
 ```
 
-```{r save-hedonic-inline}
-# Inline values consumed by paper/report.qmd (hedonic regression section).
-# Spec labels follow THIS file:
-#   A = EAL + CRF; B = resilience + SoVI; C = B + SoVI x CDC-regime interaction; D = B - SoVI.
-hedonic_inline <- list(
-  # Spec A — income elasticity (log-log): % change in ZHVI per 1% change in income
-  hed_income_coef = round(coef(mA)["log_income"], 3),
 
-  # Spec B — pooled social-vulnerability coefficient (per 1 SD)
-  hed_sovi_coef_B = round(coef(mB)["sovi_score_z"], 3),
-
-  # Spec C — base SoVI coefficient once the CDC-regime interaction is added
-  hed_sovi_coef_C = round(coef(mC)["sovi_score_z"], 3),
-
-  # Spec E — income removed: fragility of the remaining coefficients
-  hed_eal_coef_E  = round(coef(mE)["log_eal"], 3),
-  hed_resl_coef_E = round(coef(mE)["resl_value_z"], 3),
-  hed_sovi_coef_E = round(coef(mE)["sovi_score_z"], 3),
-
-  # Primary-spec log(EAL) range (A, B, C, D, F; excludes Spec E, which drops income and flips positive)
-  hed_eal_min = round(min(sapply(list(mA, mB, mC, mD, mF), function(m) coef(m)["log_eal"])), 3),
-  hed_eal_max = round(max(sapply(list(mA, mB, mC, mD, mF), function(m) coef(m)["log_eal"])), 3)
-)
-
-saveRDS(hedonic_inline, "paper/output/regression/hedonic_inline.rds")
-```
 
 ```{r tbl-hedonic}
 #| results: 'asis'
@@ -619,7 +596,23 @@ cat(sprintf(
 ))
 ```
 
-**How to read it.** If the MDE on `log_eal` translates to (say) $3 per $1 of EAL, this design can rule out full 5% capitalization ($20) — the null result is informative — but it cannot distinguish "no pricing" from "small partial pricing" below the MDE threshold. 
+**How to read it.** If the MDE on `log_eal` translates to (say) $3 per $1 of EAL, this design can rule out full 5% capitalization ($20) — the null result is informative — but it cannot distinguish "no pricing" from "small partial pricing" below the MDE threshold.
+
+```{r hedonic-plots-rev, message=FALSE}
+source(here::here("paper", "R", "06_hedonic_plots_rev.R"))
+hed_plots <- run_hedonic_plots(
+  df       = df,        # panel analytic frame
+  xsec_df  = xsec1_df,  # vintage-collapsed cross-section
+  models   = list(
+    mC      = mC,                       # panel main spec (Spec C)
+    mE      = mE,                       # panel, income removed
+    xs_B    = xs_B,                     # cross-section main (analog of Spec C)
+    xs_2020 = xs_2020, xs_2021 = xs_2021,
+    xs_2023 = xs_2023, xs_2025 = xs_2025
+  ),
+  output_dir = here::here("paper", "output", "hedonic")
+)
+```
 
 ## 9. Caveats and what this analysis cannot establish
 
@@ -639,3 +632,40 @@ attenuated.
 
 The event study (notebook `05`) provides a complementary, less amenity-confounded
 test of whether markets *update* when risk is realized via storm.
+
+
+```{r save-hedonic-inline}
+# Inline values consumed by paper/report.qmd (hedonic regression section).
+# Spec labels follow THIS file:
+#   A = EAL + CRF; B = resilience + SoVI; C = B + SoVI x CDC-regime interaction; D = B - SoVI.
+hedonic_inline <- list(
+  # Spec A — income elasticity (log-log): % change in ZHVI per 1% change in income
+  hed_income_coef = round(coef(mA)["log_income"], 3),
+
+  # Spec B — pooled social-vulnerability coefficient (per 1 SD)
+  hed_sovi_coef_B = round(coef(mB)["sovi_score_z"], 3),
+
+  # Spec C — base SoVI coefficient once the CDC-regime interaction is added
+  hed_sovi_coef_C = round(coef(mC)["sovi_score_z"], 3),
+
+  # Spec E — income removed: fragility of the remaining coefficients
+  hed_eal_coef_E  = round(coef(mE)["log_eal"], 3),
+  hed_resl_coef_E = round(coef(mE)["resl_value_z"], 3),
+  hed_sovi_coef_E = round(coef(mE)["sovi_score_z"], 3),
+
+  # Primary-spec log(EAL) range (A, B, C, D, F; excludes Spec E, which drops income and flips positive)
+  hed_eal_min = round(min(sapply(list(mA, mB, mC, mD, mF), function(m) coef(m)["log_eal"])), 3),
+  hed_eal_max = round(max(sapply(list(mA, mB, mC, mD, mF), function(m) coef(m)["log_eal"])), 3),
+  mA = mA,
+  mB = mB,
+  mC = mC,
+  mD = mD,
+  mE = mE,
+  mF = mF,
+  rucc_df = df,
+  hed_df = hed
+  
+)
+
+saveRDS(hedonic_inline, "paper/output/regression/hedonic_inline.rds")
+```

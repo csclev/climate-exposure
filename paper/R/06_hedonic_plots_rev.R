@@ -1,16 +1,16 @@
 # 06_hedonic_plots.R
 # Reporting visuals for the cross-sectional hedonic study.
-# Source of truth for the analysis: analysis/hedonic_xsec.Rmd
+# Source of truth for the analysis: analysis/hedonic_xsec_zhvi_window_full.Rmd
 #
 # This module mirrors the run_*(args, output_dir) pattern used by event_study.R
 # and balance.R: it takes the fitted models + data already built in the Rmd and
 # returns a named list of ggplot objects, while also writing PDFs to output_dir.
 #
-# Usage from analysis/hedonic_xsec.Rmd (after the fit chunks):
+# Usage from analysis/hedonic_xsec_zhvi_window_full.Rmd (after the fit chunks):
 # source(here::here("paper", "R", "06_hedonic_plots_rev.R"))
 # hed_plots <- run_hedonic_plots(
 #   df       = df,        # panel analytic frame
-#   xsec_df  = xsec_df,   # vintage-collapsed cross-section
+#   xsec_df  = xsec1_df,   # vintage-collapsed cross-section
 #   models   = list(
 #     mC      = mC,                       # panel main spec (Spec C)
 #     mE      = mE,                       # panel, income removed
@@ -332,19 +332,6 @@ run_hedonic_plots <- function(df, xsec_df, models, output_dir) {
 
   invisible(figs)
 }
-source(here::here("paper", "R", "06_hedonic_plots_rev.R"))
-hed_plots <- run_hedonic_plots(
-  df       = df,        # panel analytic frame
-  xsec_df  = xsec1_df,   # vintage-collapsed cross-section
-  models   = list(
-    mC      = mC,                       # panel main spec (Spec C)
-    mE      = mE,                       # panel, income removed
-    xs_B    = xs_B,                     # cross-section main (analog of Spec C)
-    xs_2020 = xs_2020, xs_2021 = xs_2021,
-    xs_2023 = xs_2023, xs_2025 = xs_2025
-  ),
-  output_dir = here::here(,"paper", "output", "hedonic")
-)
 # ==============================================================================
 # REPORTING HEDONIC ALONGSIDE THE EVENT STUDY- Update this with ES data
 # ==============================================================================
@@ -467,18 +454,18 @@ make_methods_comparison <- function(models, es_effects, output_dir = NULL) {
   }
   invisible(p)
 }
-Edit this to incorporate Event Study Dataframes
-source(here::here("paper", "R", "06_hedonic_plots_rev.R"))
-joint_plot_A <- make_two_tests_panel(
-  df       = df, # panel analytic frame
-  es_summary =
-  xsec_df  = xsec_df,   # vintage-collapsed cross-section
-  models   = list(
-    mC      = mC,                       # panel main spec (Spec C)
-    mE      = mE,                       # panel, income removed
-    xs_B    = xs_B,                     # cross-section main (analog of Spec C)
-    xs_2020 = xs_2020, xs_2021 = xs_2021,
-    xs_2023 = xs_2023, xs_2025 = xs_2025
-  ),
-  output_dir = here::here("paper", "output", "hedonic")
-)
+# Edit this to incorporate Event Study Dataframes
+# source(here::here("paper", "R", "06_hedonic_plots_rev.R"))
+# joint_plot_A <- make_two_tests_panel(
+#   df       = df, # panel analytic frame
+#   # es_summary =
+#   xsec_df  = xsec_df,   # vintage-collapsed cross-section
+#   models   = list(
+#     mC      = mC,                       # panel main spec (Spec C)
+#     mE      = mE,                       # panel, income removed
+#     xs_B    = xs_B,                     # cross-section main (analog of Spec C)
+#     xs_2020 = xs_2020, xs_2021 = xs_2021,
+#     xs_2023 = xs_2023, xs_2025 = xs_2025
+#   ),
+#   output_dir = here::here("paper", "output", "hedonic")
+# )
