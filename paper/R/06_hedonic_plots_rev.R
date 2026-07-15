@@ -95,7 +95,7 @@ run_hedonic_plots <- function(df, xsec_df, models, output_dir) {
   coef_df <- hed_tidy(models$xs_B) %>%
     filter(term %in% names(HED_TERM_LABELS))
 
-  figs$coefficient_plot <- ggplot(
+  figs$coefficient_xsec_plot <- ggplot(
     coef_df, aes(x = estimate, y = reorder(label, estimate), color = sig)
   ) +
     geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
@@ -315,7 +315,7 @@ run_hedonic_plots <- function(df, xsec_df, models, output_dir) {
   # Save all figures present
   # ---------------------------------------------------------------------------
   sizes <- list(
-    coefficient_plot     = c(8, 5),
+    coefficient_xsec_plot     = c(8, 5),
     mde_plot             = c(9, 4.5),
     panel_vs_xsec_plot   = c(8, 4.5),
     eal_by_vintage_plot  = c(8, 5),
@@ -335,7 +335,7 @@ run_hedonic_plots <- function(df, xsec_df, models, output_dir) {
 source(here::here("paper", "R", "06_hedonic_plots_rev.R"))
 hed_plots <- run_hedonic_plots(
   df       = df,        # panel analytic frame
-  xsec_df  = xsec_df,   # vintage-collapsed cross-section
+  xsec_df  = xsec1_df,   # vintage-collapsed cross-section
   models   = list(
     mC      = mC,                       # panel main spec (Spec C)
     mE      = mE,                       # panel, income removed
@@ -343,7 +343,7 @@ hed_plots <- run_hedonic_plots(
     xs_2020 = xs_2020, xs_2021 = xs_2021,
     xs_2023 = xs_2023, xs_2025 = xs_2025
   ),
-  output_dir = here::here("paper", "output", "hedonic")
+  output_dir = here::here(,"paper", "output", "hedonic")
 )
 # ==============================================================================
 # REPORTING HEDONIC ALONGSIDE THE EVENT STUDY- Update this with ES data
@@ -467,11 +467,11 @@ make_methods_comparison <- function(models, es_effects, output_dir = NULL) {
   }
   invisible(p)
 }
-# Edit this to incorporate Event Study Dataframes
+Edit this to incorporate Event Study Dataframes
 source(here::here("paper", "R", "06_hedonic_plots_rev.R"))
 joint_plot_A <- make_two_tests_panel(
   df       = df, # panel analytic frame
-  es_summary = 
+  es_summary =
   xsec_df  = xsec_df,   # vintage-collapsed cross-section
   models   = list(
     mC      = mC,                       # panel main spec (Spec C)
