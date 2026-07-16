@@ -533,12 +533,11 @@ xs_2020 <- feols(
 ```{r xsec-compare}
 etable(mB, xs_B, xs_2020, xs_2021, xs_2023, xs_2025,
        headers = c("Panel", "XSec all", "XSec 2020", "XSec 2021", "XSec 2023", "XSec 2025"),
-       title   = "Panel hedonic vs vintage-collapsed cross-section, full ZHVI window",
+       title   = "Panel Hedonic vs Vintage-collapsed Cross-section",
        digits  = 3,
-       fitstat = c("n", "r2"))
-       # tex     = TRUE,
-       # file    = "paper/output/regression/table_hedonic_zhvi_full_window_check.tex")
-
+       fitstat = c("n", "r2"),
+       tex     = TRUE,
+       file    = "paper/output/regression/table_hedonic_zhvi_full_window_check.tex")
 ```
 
 **What to look for:**
