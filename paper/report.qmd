@@ -17,11 +17,18 @@ format:
           \usepackage{amsmath}
           \usepackage{caption}
           \captionsetup{font=small}
+          \renewcommand{\topfraction}{0.9}
+          \renewcommand{\bottomfraction}{0.8}
+          \renewcommand{\textfraction}{0.1}
+          \renewcommand{\floatpagefraction}{0.75}
+          \setcounter{topnumber}{4}
+          \setcounter{bottomnumber}{2}
+          \setcounter{totalnumber}{6}
 execute:
   echo: false
   warning: false
   message: false
-  fig-pos: "H"
+  fig-pos: "htbp"
 ---
 
 ```{r setup}
@@ -32,7 +39,6 @@ source(here::here("paper", "R", "eda_storms.R"))
 source(here::here("paper", "R", "eda_zhvi.R"))
 storm_eda <- run_storm_eda(here::here("paper", "output", "storms"))
 zhvi_eda  <- run_zhvi_eda(here::here("paper", "output", "zhvi"))
-
 
 # ---- Inline values ----
 ss <- storm_eda$summary_stats
@@ -90,6 +96,29 @@ cap_county_eal     <- 14.8e6    # 2025 median county-total expected annual loss
 cap_rate           <- 0.05      # perpetuity discount rate
 cap_beta_benchmark <- round(-(cap_county_eal / cap_units / cap_home_value) / cap_rate, 3)
 ```
+```{r setup-hedonic-legacy}
+#| output: false
+#| results: hide
+#| message: false
+source(here::here("paper", "R", "06_hedonic_plots.R"))
+hed_legacy <- run_hedonic_plots_legacy(here::here("paper", "output", "hedonic"))
+```
+```{r setup-hedonic-rev}
+#| output: false
+#| results: hide
+#| message: false
+source(here::here("paper", "R", "06_hedonic_plots_rev.R"))
+hed_rev <- run_hedonic_plots(
+  df         = hed_inline$rucc_df,
+  xsec_df    = hed_inline$xsec_df,
+  models     = list(
+    mC = hed_inline$mC, mE = hed_inline$mE, xs_B = hed_inline$xs_B,
+    xs_2020 = hed_inline$xs_2020, xs_2021 = hed_inline$xs_2021,
+    xs_2023 = hed_inline$xs_2023, xs_2025 = hed_inline$xs_2025
+  ),
+  output_dir = here::here("paper", "output", "hedonic")
+)
+```
 
 # Abstract
 
@@ -128,12 +157,11 @@ Prior work focuses on cross-sectional pricing (is risk priced at a point in time
 We examine county level data for housing economic, severe weather event, and climate risk factors. Data spans six years from 2020-2025 in the 48 contiguous states. Alaska, Hawaii, and Puerto Rico are excluded because their geographic isolation differentiates those areas from the rest of the US States.
 
 ## Housing Market (Zillow ZHVI)
-
-We use the Zillow Home Value Index (ZHVI), a smoothed, seasonally-adjusted measure of typical monthly county-level home values for single-family residences and condominiums, derived from Zillow's home valuation model rather than transaction prices. We examine three market tiers: Bottom (0–33rd percentile), Mid (33rd–67th percentile), and Top (67th–100th percentile). Coverage spans approximately `r n_zhvi_counties` counties from `r zhvi_date_min` to `r zhvi_date_max`. As of January 2023, median ZHVI is \$`r median_zhvi_bottom` (Bottom), \$`r median_zhvi_mid` (Mid), and \$`r median_zhvi_top` (Top).
-
-```{r fig-tier-dist, fig.cap="ZHVI distribution by market tier as of January 2023. Dashed lines indicate tier medians."}
+```{r fig-tier-dist, fig.cap="ZHVI distribution by market tier as of January 2023. Dashed lines indicate tier medians.", out.height="40%", fig.pos="H"}
 knitr::include_graphics(here::here("paper", "output", "zhvi", "fig_tier_dist.pdf"))
 ```
+
+We use the Zillow Home Value Index (ZHVI), a smoothed, seasonally-adjusted measure of typical monthly county-level home values for single-family residences and condominiums, derived from Zillow's home valuation model rather than transaction prices. We examine three market tiers: Bottom (0–33rd percentile), Mid (33rd–67th percentile), and Top (67th–100th percentile). Coverage spans approximately `r n_zhvi_counties` counties from `r zhvi_date_min` to `r zhvi_date_max`. As of January 2023, median ZHVI is \$`r median_zhvi_bottom` (Bottom), \$`r median_zhvi_mid` (Mid), and \$`r median_zhvi_top` (Top).
 
 ## Storm Events (NOAA)
 
@@ -141,7 +169,7 @@ We use the NOAA Storm Events Database covering 2020–2025, which records event-
 
 Our sample covers `r n_county_months` county-month storm observations across `r n_storm_counties` unique counties from `r storm_year_min` to `r storm_year_max`, comprising `r n_events` individual events and `r n_episodes` episodes. Total reported damage is \$`r total_damage_b` billion, with a median of \$`r median_damage` per damaged county-month. `r pct_zero_damage`% of county-months report zero damage.
 
-```{r fig-storm-heatmap, fig.cap="County-level storm exposure across the contiguous United States, 2020–2025."}
+```{r fig-storm-heatmap, fig.cap="County-level storm exposure across the contiguous United States, 2020–2025.", out.height="40%"}
 knitr::include_graphics(here::here("paper", "output", "storms", "fig_storm_heatmap.pdf"))
 ```
 
@@ -230,7 +258,16 @@ We run six specifications side by side. All use state + year-month fixed effects
 ```{r tbl-hedonic}
 #| results: 'asis'
 #| tbl-cap: "Hedonic regression specifications A, B, C, D, E, F"
-writeLines(readLines(here::here("paper", "output", "regression", "hedonic_regression.tex")))
+tex_lines <- readLines(here::here("paper", "output", "regression", "hedonic_regression.tex"))
+
+begin_idx <- grep("\\begin{tabular}", tex_lines, fixed = TRUE)
+end_idx   <- grep("\\end{tabular}",   tex_lines, fixed = TRUE)
+
+tex_lines <- append(tex_lines, "\\resizebox{\\textwidth}{!}{", after = begin_idx - 1)
+end_idx   <- end_idx + 1  # shift: one line was just inserted above it
+tex_lines <- append(tex_lines, "}", after = end_idx)
+
+writeLines(tex_lines)
 ```
 
 The hedonic regression operates on a county-month panel of approximately `r n_hedonic_obs` observations. 
@@ -243,8 +280,8 @@ Specification C: the methodological regime attenuates the social vulnerability c
 
 Specification F: We test the resilience result by controlling for urbanness and ruralness using USDA’s Rural-Urban Continuum Codes (RUCC). Results are consistent with spec B showing that the resilience coefficient is not a product of resilience score valuing rural characteristics and rural markets having lower prices (@fig-hedonic-urban-rural).
 
-```{r fig-hedonic-coeff, fig.cap="Hedonic regression coefficients on log(ZHVI)"}
-knitr::include_graphics(here::here("paper", "output", "hedonic", "hedonic_coefficient_plot.pdf"))
+```{r fig-hedonic-coeff, fig.cap="Hedonic regression coefficients on log(ZHVI)", fig.height=3}
+hed_legacy$coefficient_plot
 ```
 
 ## Robustness Checks
@@ -328,6 +365,7 @@ pct_survival_regional <- round(att$covered_events[att$baseline == "Regional"] / 
 ```
 
 ```{r tbl-balance-summary}
+#| results: 'asis'
 #| message: false
 read_csv(here::here("paper", "output", "balance", "balance_summary.csv"),
          show_col_types = FALSE) |>
@@ -349,8 +387,8 @@ read_csv(here::here("paper", "output", "balance", "balance_summary.csv"),
     col.names = c("Baseline", "N", "Mean Diff", "SD Diff", "Mean Diff", "SD Diff", "Mean Diff", "SD Diff", "Mean Diff", "SD Diff"),
     align = c("l", "r", rep("r", 8))
   ) |>
-  kableExtra::kable_styling(latex_options = c("hold_position", "scale_down")) |>
-  kableExtra::add_header_above(c(" " = 2, "ZHVI (log)" = 2, "Income ($)" = 2, "Resilience" = 2, "EAL (log)" = 2))
+  kableExtra::add_header_above(c(" " = 2, "ZHVI (log)" = 2, "Income ($)" = 2, "Resilience" = 2, "EAL (log)" = 2)) |>
+  kableExtra::kable_styling(latex_options = "hold_position", font_size = 8)
 ```
 
 Three counterfactual baselines are constructed as the equal-weighted mean ZHVI of a set of unaffected counties. Baseline counties must have 0 reported NOAA storm events in the pre and post storm timeframe to create an unaffected index.
@@ -391,7 +429,7 @@ pre_t3_p <- round(pre_storm_check$p_value[pre_storm_check$month_t == -3], 3)
 pre_t1_dev <- round(pre_storm_check$mean_dev[pre_storm_check$month_t == -1], 3)
 ```
 
-```{r fig-es-mid, fig.cap="Post-storm ZHVI trajectory for Mid tier housing by baseline method. R1 (first ring) shows the smallest deviation, Regional the largest.", fig.height=3.5}
+```{r fig-es-mid, fig.cap="Post-storm ZHVI trajectory for Mid tier housing by baseline method. R1 (first ring) shows the smallest deviation, Regional the largest.", fig.height=3}
 es$fig_es_mid
 ```
 
@@ -514,7 +552,7 @@ lp_placebo_max <- round(max(abs(lp_placebo$estimate), na.rm = TRUE), 3)
 
 R2 baseline shows a significant negative damage signal post-storm with significance at T+2 through T+5. R1 baseline is flat, consistent with spillover contamination. Regional baseline is noisier and more reflective of covariate imbalance than meaningful effect. The pre-storm period is uncorrelated with damage.
 
-```{r  fig-lp-baseline, fig.cap="Dynamic effect of log property damage on ZHVI deviation by baseline method. Bottom tier only. Progressive attenuation from R2 to R1 is consistent with spillover contamination of adjacent baselines.", fig.height=3.5}
+```{r  fig-lp-baseline, fig.cap="Dynamic effect of log property damage on ZHVI deviation by baseline method. Bottom tier only. Progressive attenuation from R2 to R1 is consistent with spillover contamination of adjacent baselines.", fig.height=3}
 lp$fig_lp_baseline
 ```
 
@@ -522,7 +560,7 @@ lp$fig_lp_baseline
 
 Placebo region (T-3 to T-1) is flat for all tiers (maximum absolute coefficient `r lp_placebo_max`). The tier projection shows that much of the effect is focused in the Bottom market tier, with coefficients ranging from `r lp_bottom_min` to `r lp_bottom_max` across post-storm horizons. Mid and Top tier damage coefficients are indistinguishable from zero at all horizons. Effects show partial recovery at later horizons (T+9 coefficient = `r lp_bottom_t9` vs trough of `r lp_bottom_min`).
 
-```{r  fig-lp-tier, fig.cap="Dynamic effect of log property damage on ZHVI deviation by market tier. Second Ring (R2) baseline. Red shading = placebo region (T-3 to T-1). Blue shading = post-storm window.", fig.height=3.5}
+```{r  fig-lp-tier, fig.cap="Dynamic effect of log property damage on ZHVI deviation by market tier. Second Ring (R2) baseline. Red shading = placebo region (T-3 to T-1). Blue shading = post-storm window.", fig.height=3}
 lp$fig_lp_tier
 ```
 
@@ -631,53 +669,42 @@ Zivin, J.G., Liao, Y., & Panassié, Y. (2023). How hurricanes sweep up housing m
 
 \newpage
 # Appendix
-
-```{r fig-hedonic-income, fig.cap="Climate and coastal coefficients (log(EAL), resilience, SoVI, coastal) estimated with and without controlling for income."}
-knitr::include_graphics(here::here("paper", "output", "hedonic", "hedonic_income_comparison.pdf"))
+```{r fig-hedonic-income, fig.cap="(log(EAL), resilience, SoVI, coastal) estimated with and without controlling for income.", fig.height=3, fig.pos="H"}
+hed_legacy$income_comparison_plot
 ```
-
+```{r fig-hedonic-urban-rural, fig.cap="Resilience, income, and home values across the urban-rural continuum. All series indexed to RUCC 1 (large metro) = 100.", fig.height=3, fig.pos="H"}
+hed_legacy$urban_rural_plot
+```
+```{r fig-hedonic-mde, fig.cap="Minimum Detectable Effect vs. estimated coefficient magnitude for log(EAL), resilience, and SoVI (grey band = 80-90% power MDE).", fig.height=3}
+hed_rev$mde_plot
+```
+```{r fig-hedonic-panel-vs-xsec, fig.cap="Panel hedonic vs. vintage-collapsed cross-section,full county-month panel (Spec C) and the vintage-collapsed cross-section (xs_B).", fig.height=3}
+hed_rev$panel_vs_xsec_plot
+```
 ```{r tbl-robustness}
 #| results: 'asis'
 #| tbl-cap: "Hedonic robustness checks against Spec B: inland-only sample, state-clustered standard errors, and CDC (2023+) vs HVRI (pre-2023) SoVI regimes."
 writeLines(readLines(here::here("paper", "output", "regression", "table_robustness.tex")))
 ```
-
-```{r fig-hedonic-mde, fig.cap="Minimum detectable effect vs. estimated coefficient magnitude for log(EAL), resilience, and SoVI (grey band = 80-90% power MDE)."}
-knitr::include_graphics(here::here("paper", "output", "hedonic", "hedonic_mde_plot.pdf"))
-```
-
-```{r fig-hedonic-panel-vs-xsec, fig.cap="Panel hedonic vs. vintage-collapsed cross-section, full ZHVI window: log(EAL), resilience, and SoVI coefficients compared across the full county-month panel (Spec C) and the vintage-collapsed cross-section (xs_B)."}
-knitr::include_graphics(here::here("paper", "output", "hedonic", "hedonic_panel_vs_xsec_plot.pdf"))
-```
-
-```{r tbl-hedonic xsec}
+```{r tbl-hedonic-xsec}
 #| results: 'asis'
 #| tbl-cap: "Hedonic Cross Section Comparison"
 writeLines(readLines(here::here("paper", "output", "regression", "table_hedonic_zhvi_full_window_check.tex")))
 ```
-
-```{r fig-hedonic-urban-rural, fig.cap="Resilience, income, and home values across the urban-rural continuum. All series indexed to RUCC 1 (large metro) = 100."}
-knitr::include_graphics(here::here("paper", "output", "hedonic", "hedonic_urban_rural.pdf"))
-```
-
-```{r fig-balance, fig.cap="Per-event covariate balance: target minus baseline mean. Red dashed line indicates perfect balance (zero difference). Rows share x-axes for visual comparison across baseline methods.", fig.height=10, fig.width=7}
+```{r fig-balance, fig.cap="Per-event covariate balance: target minus baseline mean. Red dashed line indicates perfect balance (zero difference). Rows share x-axes for visual comparison across baseline methods.", fig.height=10}
 balance$fig_balance
 ```
-
-```{r fig-es-bottom, fig.cap="Post-storm ZHVI trajectory for Bottom tier housing by baseline method. Wider confidence intervals reflect thinner transaction volume."}
+```{r fig-es-bottom, fig.cap="Post-storm ZHVI trajectory for Bottom tier housing by baseline method. Wider confidence intervals reflect thinner transaction volume.", fig.height=3}
 es$fig_es_bottom
 ```
-
-```{r fig-es-top, fig.cap="Post-storm ZHVI trajectory for Top tier housing by baseline method."}
+```{r fig-es-top, fig.cap="Post-storm ZHVI trajectory for Top tier housing by baseline method.", fig.height=3}
 es$fig_es_top
 ```
-
 ```{r tbl-baseline}
 #| results: 'asis'
 #| tbl-cap: "Baseline Sensitivity: Mid Tier, Full NRI Specification"
 writeLines(readLines(here::here("paper", "output", "regression", "table_baseline_sensitivity.tex")))
 ```
-
 ```{r tbl-tier}
 #| results: 'asis'
 #| tbl-cap: "Tier Comparison: Second Ring (R2) Baseline, Full NRI Specification"

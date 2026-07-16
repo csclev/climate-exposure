@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
   fig.width = 9, fig.height = 5
 )
 
-knitr::opts_knit$set(root.dir = "/Users/davidschaaf/Projects/climate-exposure")
+knitr::opts_knit$set(root.dir = here::here())
 ```
 
 ## Overview
@@ -45,11 +45,23 @@ library(ggplot2)
 library(modelsummary)
 ```
 
-```{r census-key, eval=FALSE}
-# One-time: register at https://api.census.gov/data/key_signup.html
-# Then save your key to ~/.Renviron with:
-# tidycensus::census_api_key("18e688eb703b0fd7372efbcda03d554928bbba31", install = TRUE)
-# Restart R afterward.
+```{r census-key}
+# ACS pulls are cached to data/processed/acs_controls.rds, so a key is only
+# required the first time this runs on a given machine.
+#   1. Register at https://api.census.gov/data/key_signup.html
+#   2. Add a line to ~/.Renviron:  CENSUS_API_KEY=your_key_here
+#   3. Restart R
+acs_cache_path <- here::here("data", "processed", "acs_controls.rds")
+
+if (!file.exists(acs_cache_path)) {
+  census_key <- Sys.getenv("CENSUS_API_KEY")
+  if (identical(census_key, "")) {
+    stop("CENSUS_API_KEY not set. Add CENSUS_API_KEY=<your key> to ~/.Renviron ",
+         "and restart R. Register a free key at ",
+         "https://api.census.gov/data/key_signup.html")
+  }
+  tidycensus::census_api_key(census_key)
+}
 ```
 
 ## 2. Load Python-prepped panel
@@ -111,30 +123,36 @@ share - those are inputs to the CDC SVI and would create multicollinearity with
 `sovi_score`.
 
 ```{r acs-pull, cache=TRUE}
-# Variables of interest from 2019-2023 5-year ACS
-acs_vars <- c(
-  median_hh_income    = "B19013_001",  # median household income
-  pop_25plus          = "B15003_001",  # denominator for education
-  bach_or_higher      = "B15003_022",  # bachelor's
-  master_              = "B15003_023",
-  prof_                = "B15003_024",
-  doctorate_           = "B15003_025",
-  occ_units           = "B25003_001",  # housing denominator
-  owner_units         = "B25003_002",  # owner-occupied
-  median_age          = "B01002_001",
-  median_yr_built     = "B25035_001"
-)
+acs_cached <- file.exists(acs_cache_path)
 
-acs_raw <- get_acs(
-  geography = "county",
-  variables = acs_vars,
-  year      = 2023,
-  survey    = "acs5",
-  output    = "wide",
-  cache_table = TRUE
-)
+if (!acs_cached) {
+  # Variables of interest from 2019-2023 5-year ACS
+  acs_vars <- c(
+    median_hh_income    = "B19013_001",  # median household income
+    pop_25plus          = "B15003_001",  # denominator for education
+    bach_or_higher      = "B15003_022",  # bachelor's
+    master_              = "B15003_023",
+    prof_                = "B15003_024",
+    doctorate_           = "B15003_025",
+    occ_units           = "B25003_001",  # housing denominator
+    owner_units         = "B25003_002",  # owner-occupied
+    median_age          = "B01002_001",
+    median_yr_built     = "B25035_001"
+  )
 
-cat("ACS counties pulled:", nrow(acs_raw), "\n")
+  acs_raw <- get_acs(
+    geography = "county",
+    variables = acs_vars,
+    year      = 2023,
+    survey    = "acs5",
+    output    = "wide",
+    cache_table = TRUE
+  )
+
+  cat("ACS counties pulled:", nrow(acs_raw), "\n")
+} else {
+  cat("Using cached ACS controls at", acs_cache_path, "\n")
+}
 ```
 
 ```{r}
@@ -160,19 +178,24 @@ hed <- hed %>% inner_join(rucc, by = "stcofips")
 
 
 ```{r acs-tidy}
-acs <- acs_raw %>%
-  transmute(
-    stcofips         = GEOID,
-    median_hh_income = median_hh_incomeE,
-    share_bach_plus  = (bach_or_higherE + master_E + prof_E + doctorate_E) / pop_25plusE,
-    share_owner_occ  = owner_unitsE / occ_unitsE,
-    median_age       = median_ageE,
-    median_yr_built  = median_yr_builtE
-  ) %>%
-  filter(!is.na(median_hh_income))
+if (acs_cached) {
+  acs <- readRDS(acs_cache_path)
+} else {
+  acs <- acs_raw %>%
+    transmute(
+      stcofips         = GEOID,
+      median_hh_income = median_hh_incomeE,
+      share_bach_plus  = (bach_or_higherE + master_E + prof_E + doctorate_E) / pop_25plusE,
+      share_owner_occ  = owner_unitsE / occ_unitsE,
+      median_age       = median_ageE,
+      median_yr_built  = median_yr_builtE
+    ) %>%
+    filter(!is.na(median_hh_income))
 
-# Save a cached copy so we don't hammer the API on every render
-#saveRDS(acs, "../data/processed/acs_controls.rds")
+  dir.create(dirname(acs_cache_path), recursive = TRUE, showWarnings = FALSE)
+  saveRDS(acs, acs_cache_path)
+  cat("Cached ACS controls to", acs_cache_path, "\n")
+}
 
 summary(acs)
 ```
@@ -656,9 +679,16 @@ hedonic_inline <- list(
   mE = mE,
   mF = mF,
   rucc_df = df,
-  hed_df = hed
-  
+  hed_df = hed,
+  # Cross-section models + data, for 06_hedonic_plots_rev.R::run_hedonic_plots()
+  xsec_df = xsec1_df,
+  xs_B    = xs_B,
+  xs_2020 = xs_2020,
+  xs_2021 = xs_2021,
+  xs_2023 = xs_2023,
+  xs_2025 = xs_2025
 )
 
 saveRDS(hedonic_inline, "paper/output/regression/hedonic_inline.rds")
 ```
+
