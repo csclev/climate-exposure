@@ -93,7 +93,7 @@ cap_beta_benchmark <- round(-(cap_county_eal / cap_units / cap_home_value) / cap
 
 # Abstract
 
-FEMA's National Risk Index (NRI) is a composite metric created to determine the relative risk to 18 climatological hazards for all areas of the United States. Using a two-part investigation, we first test whether real estate markets incorporate any of its risk or resilience components into pricing.
+FEMA's National Risk Index (NRI) is a composite metric created to determine the relative risk to 18 natural hazards for all areas of the United States. Using a two-part investigation, we first test whether real estate markets incorporate any of its risk or resilience components into pricing.
 Next we stress test the hedonic findings with a natural experiment developed using NOAA storm data to understand how real estate markets respond post-hazard event and whether FEMA's expected annual loss, social vulnerability, and resilience scores correlate with heterogeneous outcomes.
 This study does not find evidence of climate risk factors definitively incorporated into property pricing.
 
@@ -125,7 +125,7 @@ Prior work focuses on cross-sectional pricing (is risk priced at a point in time
 
 # Data
 
-We examine county level data for housing economic, severe weather event, and climate risk factors. Data spans six full years from 2020-2025 in the 48 contiguous states. Alaska, Hawaii, and Puerto Rico are excluded because their geographic isolation differentiates those areas from the rest of the US States.
+We examine county level data for housing economic, severe weather event, and climate risk factors. Data spans six years from 2020-2025 in the 48 contiguous states. Alaska, Hawaii, and Puerto Rico are excluded because their geographic isolation differentiates those areas from the rest of the US States.
 
 ## Housing Market (Zillow ZHVI)
 
@@ -147,13 +147,13 @@ knitr::include_graphics(here::here("paper", "output", "storms", "fig_storm_heatm
 
 ## Community Risk and Resilience (FEMA NRI)
 
-We use the FEMA National Risk Index (NRI), a county-level composite of hazard exposure, social vulnerability, and community resilience published in four vintages (2020, 2021, 2023, 2025). The NRI covers `r n_nri_counties` counties. The NRI risk score is the product of Expected Annual Loss (EAL) and the Community Risk Factor (CRF), a ratio of Social Vulnerability to Community Resilience. Higher social vulnerability or lower resilience amplifies the base loss exposure. The CRF captures the community's capacity to absorb and recover from that loss.
+We use the FEMA National Risk Index (NRI), a county-level composite of hazard exposure, social vulnerability, and community resilience published in four vintages (2020, 2021, 2023, 2025). The NRI covers `r n_nri_counties` counties. The NRI risk score is the product of Expected Annual Loss (EAL) and the Community Risk Factor (CRF), a ratio of Social Vulnerability Index (SoVI) to Community Resilience. Higher social vulnerability or lower resilience amplifies the base loss exposure. The CRF captures the community's capacity to absorb and recover from that loss.
 
 $$\text{National Risk Index} = \text{Expected Annual Loss} \times \underbrace{\frac{\text{Social Vulnerability}}{\text{Community Resilience}}}_{\text{CRF}}$$
 
 We match each storm observation to the most recent available NRI vintage using a forward-fill rule, and smooth NRI values on a monthly basis between vintage release dates to avoid discrete jumps at vintage boundaries.
 
-FEMA revised its NRI methodology between the 2021 and 2023 releases, shifting from a relative index to an absolute dollar-based measure for Expected Annual Loss. This is a potential source of measurement discontinuity for events near that transition, distinct from the separate SoVI methodology break. Coastal county status is also derived from the NRI. A county is flagged coastal if any vintage reports positive coastal-flooding expected annual loss, which FEMA computes only for counties with Atlantic, Pacific, Gulf, or Great Lakes shoreline exposure.
+FEMA revised its NRI methodology between the 2021 and 2023 releases, shifting from a relative index to an absolute dollar-based measure for Expected Annual Loss. 2020 and 2021 values were converted to the dollar-based measure following FEMA's documented methodology. This is a potential source of measurement discontinuity for events near that transition, distinct from the separate SoVI methodology break. Coastal county status is also derived from the NRI. A county is flagged coastal if any vintage reports positive coastal-flooding expected annual loss, which FEMA computes only for counties with Atlantic, Pacific, Gulf, or Great Lakes shoreline exposure.
 
 ## Supplementary Data
 
@@ -202,7 +202,7 @@ This section estimates a cross-county hedonic model relating the Zillow Home Val
 We need county-level controls that the NRI components don't already capture:
 
 - Median household income - the largest non-NRI driver of housing value
-- Coastal County Status - account for coastal amenity and/or risk
+- Coastal County Status - account for coastal amenity and/or risk (calculated as any county with any coastal flooding risk value in any year)
 - Population density - controls for urban/rural market structure (population and land area from the NRI county fields)
 
 Considered but left off due to overlap with community resilience and social vulnerability calculations:
@@ -251,7 +251,7 @@ knitr::include_graphics(here::here("paper", "output", "hedonic", "hedonic_coeffi
 
 The persistence of these specifications’ results is tested with multiple robustness checks. The main model, Spec B, is reconstructed without income and separately without SoVI to see if other coefficients are fragile to being conditioned on them. When income is removed, log(EAL) becomes significant at `r hed_eal_coef_E`\*\*\*, resilience becomes insignificant (`r hed_resl_coef_E`) and SoVI jumps to `r hed_sovi_coef_E`\*\*\*, confirming income’s dominance and the relative fragility of the others. Without SoVI there were no substantial changes in coefficients’ sign or magnitude.
 
-Specs are attempted excluding coastal counties, using more conservative state clustered standard errors, and differentiating the pre and post-2023 time periods marking the SoVI measurement change (@tbl-robustness). All deliver results of a similar magnitude and sign with the exceptions of larger standard errors in the state-clustered model, and larger magnitude and significance level log(EAL), resilience, and SoVI in the pre-2023 regime.
+Specs are attempted excluding coastal counties, using more conservative state clustered standard errors, and differentiating the pre and post-2023 time periods marking the SoVI measurement change (@tbl-robustness). All deliver results of a similar magnitude and sign with the exceptions of larger standard errors in the state-clustered model, and larger magnitude and significance level log(EAL) and resilience in the pre-2023 regime.
 
 Going further, a collapsed panel cross-section using one observation per county per NRI vintage is constructed as a check against: attenuation in the income coefficient (a single 5-year income value) across the interpolated panel, or possible flaws in the interpolation method capturing within-county time variation. Each observation uses a mean ZHVI +/-6 month window from NRI release (with the exception of 2025 that uses a -6 to +3 month window due to availability of data) — this is the same cross-section shown as the panel-vs-cross-section comparison in the appendix (@fig-hedonic-panel-vs-xsec). The results of this more strict cross section hold coefficients of similar sign and magnitude. The only exceptions are the individual 2020 and 2021 results which have larger log(EAL) and resilience coefficients.
 
@@ -648,6 +648,12 @@ knitr::include_graphics(here::here("paper", "output", "hedonic", "hedonic_mde_pl
 
 ```{r fig-hedonic-panel-vs-xsec, fig.cap="Panel hedonic vs. vintage-collapsed cross-section, full ZHVI window: log(EAL), resilience, and SoVI coefficients compared across the full county-month panel (Spec C) and the vintage-collapsed cross-section (xs_B)."}
 knitr::include_graphics(here::here("paper", "output", "hedonic", "hedonic_panel_vs_xsec_plot.pdf"))
+```
+
+```{r tbl-hedonic xsec}
+#| results: 'asis'
+#| tbl-cap: "Hedonic Cross Section Comparison"
+writeLines(readLines(here::here("paper", "output", "regression", "table_hedonic_zhvi_full_window_check.tex")))
 ```
 
 ```{r fig-hedonic-urban-rural, fig.cap="Resilience, income, and home values across the urban-rural continuum. All series indexed to RUCC 1 (large metro) = 100."}
