@@ -112,12 +112,7 @@ run_lp <- function(baselines, output_dir) {
       color    = "Tier",
       fill     = "Tier"
     ) +
-    theme_minimal() +
-    theme(
-      panel.grid.minor = element_blank(),
-      legend.position  = "bottom",
-      axis.text.x      = element_text(size = 7, angle = 45, hjust = 1)
-    )
+    theme_paper
   
   # ---- LP 2: Damage by baseline (mid tier) ----
   baseline_lp_list <- list()
@@ -161,12 +156,7 @@ run_lp <- function(baselines, output_dir) {
       color    = "Baseline",
       fill     = "Baseline"
     ) +
-    theme_minimal() +
-    theme(
-      panel.grid.minor = element_blank(),
-      legend.position  = "bottom",
-      axis.text.x      = element_text(size = 7, angle = 45, hjust = 1)
-    )
+    theme_paper
   
   # ---- Save ----
   ggsave(file.path(output_dir, "fig_lp_tier.pdf"),

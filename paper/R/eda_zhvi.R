@@ -75,8 +75,7 @@ run_zhvi_eda <- function(output_dir) {
       fill     = "Tier",
       color    = "Tier"
     ) +
-    theme_minimal() +
-    theme(legend.position = "bottom")
+    theme_paper
   
   # ---- 2. Tier trajectories over time ----
   fig_tier_trajectory <- zhvi_all |>
@@ -96,8 +95,7 @@ run_zhvi_eda <- function(output_dir) {
       y        = "Median ZHVI ($K)",
       color    = "Tier"
     ) +
-    theme_minimal() +
-    theme(legend.position = "bottom")
+    theme_paper
   
   # ---- 3. Summary stats by tier ----
   tier_summary <- zhvi_all |>

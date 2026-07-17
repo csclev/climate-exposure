@@ -37,9 +37,19 @@ BASELINE_COLORS <- c(
 )
 
 # ---- Shared theme ----
-theme_paper <- theme_minimal() +
+theme_paper <- theme_minimal(base_size = 11) +
   theme(
-    panel.grid.minor = element_blank(),
+    plot.title       = element_text(size = 13, face = "bold"),
+    plot.subtitle    = element_text(size = 10,  color = "grey40"),
+    plot.caption     = element_text(size = 8,  color = "grey40", hjust = 0),
+    plot.title.position   = "plot",
+    plot.caption.position = "plot",
+    axis.title       = element_text(size = 9),
+    axis.text        = element_text(size = 9),
+    axis.text.x      = element_text(size = 7, angle = 45, hjust = 1),
+    strip.text       = element_text(size = 9, face = "bold"),
+    legend.title     = element_text(size = 8),
+    legend.text      = element_text(size = 9),
     legend.position  = "bottom",
-    axis.text.x      = element_text(size = 7, angle = 45, hjust = 1)
+    panel.grid.minor = element_blank()
   )

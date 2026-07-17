@@ -32,14 +32,9 @@ library(fixest)
 library(here)
 
 # ---- Shared visual constants -------------------------------------------------
-# Reuse the project theme if present; otherwise fall back to a local minimal one.
-if (file.exists(here::here("paper", "R", "theme.R"))) {
-  source(here::here("paper", "R", "theme.R"))
-}
-if (!exists("theme_paper")) {
-  theme_paper <- theme_minimal() +
-    theme(panel.grid.minor = element_blank(), legend.position = "bottom")
-}
+# Reuse the project theme
+source(here::here("paper", "R", "theme.R"))
+
 
 HED_COL_SIG    <- "#1a5490"   # significant (deep blue)
 HED_COL_NULL   <- "grey60"    # not significant
@@ -48,10 +43,10 @@ HED_COL_POS    <- "#2166ac"   # premium / positive
 
 # Human-readable labels for model terms (single source of truth)
 HED_TERM_LABELS <- c(
-  log_eal         = "Expected annual loss (log)",
+  log_eal         = "EAL (log)",
   log_crf         = "Community risk factor (log)",
   resl_value_z    = "Resilience (1-SD)",
-  sovi_score_z    = "Social vulnerability (1-SD)",
+  sovi_score_z    = "SoVI (1-SD)",
   log_income      = "Median income (log)",
   log_pop_density = "Pop. density (log)",
   coastal         = "Coastal county"
@@ -138,12 +133,10 @@ run_hedonic_plots <- function(df, xsec_df, models, output_dir) {
                                   "Below MDE"  = HED_COL_NEG)) +
     scale_x_continuous(labels = label_number(accuracy = 0.001)) +
     labs(
-      title    = "Estimate vs. minimum detectable effect",
-      subtitle = "Grey band = 80%–90% power MDE (2.8–3.24 × SE). Dot = |estimate|. EAL falls short of detectability",
-      x        = "Absolute coefficient magnitude",
-      y        = NULL, color = NULL
-    ) +
-    theme_paper
+      title    = "Estimate vs. Minimum Detectable Effect",
+      subtitle = stringr::str_wrap("Grey band = 80%–90% power MDE (2.8–3.24 × SE). Dot = |estimate|. EAL falls short of detectability", width = 60),
+      x = "Absolute coefficient magnitude", y = NULL, color = NULL
+    ) + theme_paper
 
   # ---------------------------------------------------------------------------
   # FIGURE 3 - Panel vs. cross-section robustness
@@ -175,11 +168,9 @@ run_hedonic_plots <- function(df, xsec_df, models, output_dir) {
     scale_x_continuous(labels = label_number(accuracy = 0.01)) +
     labs(
       title    = "Panel vs Cross Section Consistency",
-      subtitle = "Same sign and rough magnitude across specifications; cross-section CIs widen as n drops. Bars = 95% CI.",
-      x        = "Coefficient  (≈ % change in ZHVI)",
-      y        = NULL, color = NULL
-    ) +
-    theme_paper
+      subtitle = stringr::str_wrap("Same sign and rough magnitude across specifications; cross-section CIs widen as n drops. Bars = 95% CI.", width = 60),
+      x = "Coefficient  (≈ % change in ZHVI)", y = NULL, color = NULL
+    ) + theme_paper
 
   # ---------------------------------------------------------------------------
   # FIGURE 4 - log(EAL) coefficient by single NRI vintage

@@ -89,8 +89,7 @@ run_storm_eda <- function(output_dir) {
       y     = "County-Month Storm Observations",
       fill  = "Event Type"
     ) +
-    theme_minimal() +
-    theme(legend.position = "bottom")
+    theme_paper
   
   # ---- 3. Summary stats ----
   summary_stats <- tibble(
