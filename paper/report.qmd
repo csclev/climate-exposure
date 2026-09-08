@@ -16,7 +16,7 @@ format:
           \usepackage{float}
           \usepackage{amsmath}
           \usepackage{caption}
-          \captionsetup{font=small}
+          \captionsetup{font=small,skip=3pt}
           \renewcommand{\topfraction}{0.9}
           \renewcommand{\bottomfraction}{0.8}
           \renewcommand{\textfraction}{0.1}
@@ -24,6 +24,9 @@ format:
           \setcounter{topnumber}{4}
           \setcounter{bottomnumber}{2}
           \setcounter{totalnumber}{6}
+          \setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
+          \setlength{\intextsep}{6pt plus 2pt minus 2pt}
+          \setlength{\floatsep}{8pt plus 2pt minus 2pt}
 execute:
   echo: false
   warning: false
@@ -367,6 +370,8 @@ pct_survival_regional <- round(att$covered_events[att$baseline == "Regional"] / 
 ```{r tbl-balance-summary}
 #| results: 'asis'
 #| message: false
+#| tbl-cap: "Covariate balance: mean difference (bias) and standard deviation (spread) of target minus baseline county characteristics per event."
+#| tbl-pos: "H"
 read_csv(here::here("paper", "output", "balance", "balance_summary.csv"),
          show_col_types = FALSE) |>
   transmute(
@@ -381,14 +386,14 @@ read_csv(here::here("paper", "output", "balance", "balance_summary.csv"),
     `Mean   `= mean_eal,
     `SD   `  = sd_eal
   ) |>
-  knitr::kable(
-    caption = "Covariate balance: mean difference (bias) and standard deviation (spread) of target minus baseline county characteristics per event.",
+  kableExtra::kbl(
     booktabs = TRUE,
+    longtable = FALSE,
     col.names = c("Baseline", "N", "Mean Diff", "SD Diff", "Mean Diff", "SD Diff", "Mean Diff", "SD Diff", "Mean Diff", "SD Diff"),
     align = c("l", "r", rep("r", 8))
   ) |>
   kableExtra::add_header_above(c(" " = 2, "ZHVI (log)" = 2, "Income ($)" = 2, "Resilience" = 2, "EAL (log)" = 2)) |>
-  kableExtra::kable_styling(latex_options = "hold_position", font_size = 8)
+  kableExtra::kable_styling(latex_options = "scale_down")
 ```
 
 Three counterfactual baselines are constructed as the equal-weighted mean ZHVI of a set of unaffected counties. Baseline counties must have 0 reported NOAA storm events in the pre and post storm timeframe to create an unaffected index.
@@ -675,38 +680,42 @@ knitr::include_graphics(here::here("paper", "output", "hedonic", "hedonic_income
 ```{r fig-hedonic-urban-rural, fig.cap="Resilience, income, and home values across the urban-rural continuum. All series indexed to RUCC 1 (large metro) = 100.", out.width="100%", fig.pos="H"}
 knitr::include_graphics(here::here("paper", "output", "hedonic", "hedonic_urban_rural.pdf"))
 ```
-```{r fig-hedonic-mde, fig.cap="Minimum Detectable Effect vs. estimated coefficient magnitude for log(EAL), resilience, and SoVI (grey band = 80-90% power MDE).", out.width="100%"}
+```{r fig-hedonic-mde, fig.cap="Minimum Detectable Effect vs. estimated coefficient magnitude for log(EAL), resilience, and SoVI (grey band = 80-90% power MDE).", out.width="100%", fig.pos="H"}
 knitr::include_graphics(here::here("paper", "output", "hedonic", "hedonic_mde_plot.pdf"))
 ```
-```{r fig-hedonic-panel-vs-xsec, fig.cap="Panel hedonic vs. vintage-collapsed cross-section,full county-month panel (Spec C) and the vintage-collapsed cross-section (xs_B).", out.width="100%"}
+```{r fig-hedonic-panel-vs-xsec, fig.cap="Panel hedonic vs. vintage-collapsed cross-section,full county-month panel (Spec C) and the vintage-collapsed cross-section (xs_B).", out.width="100%", fig.pos="H"}
 knitr::include_graphics(here::here("paper", "output", "hedonic", "hedonic_panel_vs_xsec_plot.pdf"))
 ```
 ```{r tbl-robustness}
 #| results: 'asis'
 #| tbl-cap: "Hedonic robustness checks against Spec B: inland-only sample, state-clustered standard errors, and CDC (2023+) vs HVRI (pre-2023) SoVI regimes."
+#| tbl-pos: "H"
 writeLines(readLines(here::here("paper", "output", "regression", "table_robustness.tex")))
 ```
 ```{r tbl-hedonic-xsec}
 #| results: 'asis'
 #| tbl-cap: "Hedonic Cross Section Comparison"
+#| tbl-pos: "H"
 writeLines(readLines(here::here("paper", "output", "regression", "table_hedonic_zhvi_full_window_check.tex")))
 ```
-```{r fig-balance, fig.cap="Per-event covariate balance: target minus baseline mean. Red dashed line indicates perfect balance (zero difference). Rows share x-axes for visual comparison across baseline methods.", out.height="90%"}
+```{r fig-balance, fig.cap="Per-event covariate balance: target minus baseline mean. Red dashed line indicates perfect balance (zero difference). Rows share x-axes for visual comparison across baseline methods.", out.width="100%", fig.pos="H"}
 knitr::include_graphics(here::here("paper", "output", "balance", "fig_balance.pdf"))
 ```
-```{r fig-es-bottom, fig.cap="Post-storm ZHVI trajectory for Bottom tier housing by baseline method. Wider confidence intervals reflect thinner transaction volume.", out.width="100%"}
+```{r fig-es-bottom, fig.cap="Post-storm ZHVI trajectory for Bottom tier housing by baseline method. Wider confidence intervals reflect thinner transaction volume.", out.width="100%", fig.pos="H"}
 knitr::include_graphics(here::here("paper", "output", "event_study", "fig_es_bottom.pdf"))
 ```
-```{r fig-es-top, fig.cap="Post-storm ZHVI trajectory for Top tier housing by baseline method.", out.width="100%"}
+```{r fig-es-top, fig.cap="Post-storm ZHVI trajectory for Top tier housing by baseline method.", out.width="100%", fig.pos="H"}
 knitr::include_graphics(here::here("paper", "output", "event_study", "fig_es_top.pdf"))
 ```
 ```{r tbl-baseline}
 #| results: 'asis'
 #| tbl-cap: "Baseline Sensitivity: Mid Tier, Full NRI Specification"
+#| tbl-pos: "H"
 writeLines(readLines(here::here("paper", "output", "regression", "table_baseline_sensitivity.tex")))
 ```
 ```{r tbl-tier}
 #| results: 'asis'
 #| tbl-cap: "Tier Comparison: Second Ring (R2) Baseline, Full NRI Specification"
+#| tbl-pos: "H"
 writeLines(readLines(here::here("paper", "output", "regression", "table_tier_comparison.tex")))
 ```
