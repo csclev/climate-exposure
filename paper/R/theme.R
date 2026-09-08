@@ -40,9 +40,12 @@ BASELINE_COLORS <- c(
 theme_paper <- theme_minimal(base_size = 11) +
   theme(
     plot.title       = element_text(size = 13, face = "bold"),
-    plot.subtitle    = element_text(size = 10,  color = "grey40"),
+    plot.subtitle    = element_text(size = 10,  color = "grey40",
+                                    margin = margin(b = 6)),
     plot.caption     = element_text(size = 8,  color = "grey40", hjust = 0),
-    plot.title.position   = "plot",
+    # Align title/subtitle to the panel, not the whole plot: keeps them out
+    # of the rotated y-axis title's column so long y titles can't overlap them.
+    plot.title.position   = "panel",
     plot.caption.position = "plot",
     axis.title       = element_text(size = 9),
     axis.text        = element_text(size = 9),
